@@ -1,8 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// I'm assuming the ONET_API_KEY is in "username:password" format.
-const ONET_API_KEY = Deno.env.get('ONET_API_KEY');
+// O*NET API uses username and password authentication
+const ONET_USERNAME = 'ignite_consulting';
+const ONET_PASSWORD = '4675rxg';
 const ONET_BASE_URL = 'https://services.onetcenter.org/ws/online';
 
 const corsHeaders = {
@@ -19,11 +20,8 @@ serve(async (req) => {
   try {
     const { onetPath } = await req.json(); // e.g., 'search?keyword=developer&end=50'
 
-    if (!ONET_API_KEY) {
-      throw new Error('O*NET API key is not set in Supabase secrets.');
-    }
-
-    const authHeader = 'Basic ' + btoa(ONET_API_KEY);
+    // Create Basic Auth header with username:password
+    const authHeader = 'Basic ' + btoa(`${ONET_USERNAME}:${ONET_PASSWORD}`);
 
     console.log(`Proxying request to: ${ONET_BASE_URL}/${onetPath}`);
 
