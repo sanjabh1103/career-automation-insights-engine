@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Briefcase } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SearchInterfaceProps {
   onOccupationSelect: (occupation: any) => void;
@@ -11,27 +14,46 @@ interface SearchInterfaceProps {
 export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Mock search results for demonstration
-  const mockResults = [
-    { code: '47-4011.01', title: 'Energy Auditors', description: 'Conduct energy audits of buildings and systems' },
-    { code: '15-1121.00', title: 'Computer Systems Analysts', description: 'Analyze science, engineering, business problems' },
-    { code: '25-1011.00', title: 'Business Teachers', description: 'Teach courses in business administration' },
-    { code: '13-2011.00', title: 'Accountants and Auditors', description: 'Examine and analyze accounting records' },
-  ];
+  const { mutate: searchOccupations, isPending: isLoading } = useMutation({
+    mutationFn: async (term: string) => {
+      const { data, error } = await supabase.functions.invoke('onet-proxy', {
+        body: { onetPath: `search?keyword=${encodeURIComponent(term)}&end=10` },
+      });
+
+      if (error) throw new Error(`Function invocation failed: ${error.message}`);
+      if (data.error) throw new Error(`API Error: ${data.error}`);
+
+      if (!data.occupation) {
+        if (data.code && data.title) return [data];
+        return [];
+      }
+      
+      return Array.isArray(data.occupation) ? data.occupation : [data.occupation];
+    },
+    onSuccess: (data) => {
+      setResults(data.map((item: any) => ({
+        code: item.code,
+        title: item.title,
+        description: `An occupation from the O*NET database.`,
+      })));
+    },
+    onError: (error: Error) => {
+      console.error('Search failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Search Failed',
+        description: error.message,
+      });
+      setResults([]);
+    },
+  });
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      setIsLoading(true);
-      // Simulate API delay
-      setTimeout(() => {
-        setResults(mockResults.filter(result => 
-          result.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          result.description.toLowerCase().includes(searchTerm.toLowerCase())
-        ));
-        setIsLoading(false);
-      }, 500);
+      setResults([]);
+      searchOccupations(searchTerm);
     }
   };
 
