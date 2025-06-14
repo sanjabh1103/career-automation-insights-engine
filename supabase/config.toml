@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.calculate-apo]
 verify_jwt = false
+
+[functions.serpapi-jobs]
+verify_jwt = false

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { OccupationAnalysis } from './OccupationAnalysis';
@@ -7,6 +8,7 @@ import { OccupationComparisonPanel } from './OccupationComparisonPanel';
 import { Card } from '@/components/ui/card';
 import { SavedSelectionsPanel } from "./SavedSelectionsPanel";
 import { useSavedSelections } from "@/hooks/useSavedSelections";
+import { JobMarketPanel } from './JobMarketPanel';
 
 import { APODashboardHeader } from "./APODashboardHeader";
 import { ExportCareersModal } from "./ExportCareersModal";
@@ -128,6 +130,10 @@ export const APODashboard = () => {
 
           <div className="space-y-6">
             <TopCareersPanel />
+
+            {selectedOccupation && (
+              <JobMarketPanel jobTitle={selectedOccupation.title} />
+            )}
 
             {selectedJobs.length > 0 && (
               <SelectedCareersPanel
