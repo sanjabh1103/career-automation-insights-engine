@@ -212,6 +212,33 @@ export type Database = {
           },
         ]
       }
+      apo_analysis_cache: {
+        Row: {
+          analysis_data: Json
+          created_at: string
+          id: string
+          occupation_code: string
+          occupation_title: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_data: Json
+          created_at?: string
+          id?: string
+          occupation_code: string
+          occupation_title: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_data?: Json
+          created_at?: string
+          id?: string
+          occupation_code?: string
+          occupation_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_alerts: {
         Row: {
           alert_type: Database["public"]["Enums"]["alert_type"]
@@ -587,6 +614,50 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_text: string
+          created_at: string
+          document_id: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_index: number
+          chunk_text: string
+          created_at?: string
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          chunk_text?: string
+          created_at?: string
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "ai_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1256,6 +1327,33 @@ export type Database = {
           platform?: Database["public"]["Enums"]["platform_type"]
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_selections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          selections: Json
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          selections?: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          selections?: Json
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
