@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { OccupationAnalysis } from './OccupationAnalysis';
 import { TopCareersPanel } from './TopCareersPanel';
 import { StatsOverview } from './StatsOverview';
+import { OccupationComparisonPanel } from './OccupationComparisonPanel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, BarChart3 } from 'lucide-react';
@@ -41,9 +41,47 @@ interface SelectedOccupation {
   };
 }
 
+const exportToCSV = (occupations: SelectedOccupation[]) => {
+  if (!occupations.length) return;
+  const fields = [
+    "Code", "Title", "Overall APO (%)", "Confidence", "Timeline",
+    "Tasks APO", "Knowledge APO", "Skills APO", "Abilities APO", "Technologies APO"
+  ];
+
+  let csv =
+    fields.join(",") + "\n";
+
+  for (const occ of occupations) {
+    csv += [
+      `"${occ.code}"`,
+      `"${occ.title.replace(/"/g, '""')}"`,
+      `${occ.overallAPO?.toFixed(1) ?? ""}`,
+      `"${occ.confidence}"`,
+      `"${occ.timeline}"`,
+      `${occ.categoryBreakdown?.tasks?.apo?.toFixed(1) ?? ""}`,
+      `${occ.categoryBreakdown?.knowledge?.apo?.toFixed(1) ?? ""}`,
+      `${occ.categoryBreakdown?.skills?.apo?.toFixed(1) ?? ""}`,
+      `${occ.categoryBreakdown?.abilities?.apo?.toFixed(1) ?? ""}`,
+      `${occ.categoryBreakdown?.technologies?.apo?.toFixed(1) ?? ""}`,
+    ].join(",") + "\n";
+  }
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "APO_Career_Export.csv";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }, 100);
+};
+
 export const APODashboard = () => {
   const [selectedOccupation, setSelectedOccupation] = useState<SelectedOccupation | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
+  const [showExport, setShowExport] = useState(false);
 
   const handleOccupationSelect = (occupation: any) => {
     console.log('Selected occupation with enhanced APO data:', occupation);
@@ -56,19 +94,19 @@ export const APODashboard = () => {
     }
   };
 
+  const handleRemoveSelected = (code: string) => {
+    setSelectedJobs(selectedJobs.filter(job => job.code !== code));
+  };
+
   const calculateOverallAPO = (occupation: any) => {
-    // Use the enhanced overall APO if available, otherwise fall back to calculation
     if (occupation.overallAPO !== undefined) {
       return occupation.overallAPO;
     }
-    
-    // Fallback calculation for backwards compatibility
     const taskAPO = occupation.tasks?.reduce((sum: number, task: any) => sum + task.apo, 0) / (occupation.tasks?.length || 1);
     const knowledgeAPO = occupation.knowledge?.reduce((sum: number, item: any) => sum + item.apo, 0) / (occupation.knowledge?.length || 1);
     const skillsAPO = occupation.skills?.reduce((sum: number, skill: any) => sum + skill.apo, 0) / (occupation.skills?.length || 1);
     const abilitiesAPO = occupation.abilities?.reduce((sum: number, ability: any) => sum + ability.apo, 0) / (occupation.abilities?.length || 1);
     const techAPO = occupation.technologies?.reduce((sum: number, tech: any) => sum + tech.apo, 0) / (occupation.technologies?.length || 1);
-    
     return (taskAPO + knowledgeAPO + skillsAPO + abilitiesAPO + techAPO) / 5;
   };
 
@@ -92,7 +130,12 @@ export const APODashboard = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Data
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowExport(true)}
+                disabled={selectedJobs.length === 0}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export ({selectedJobs.length})
               </Button>
@@ -105,17 +148,22 @@ export const APODashboard = () => {
         {/* Enhanced Stats Overview */}
         <StatsOverview selectedJobsCount={selectedJobs.length} />
 
+        {/* Advanced Comparison Panel */}
+        {selectedJobs.length > 1 && (
+          <OccupationComparisonPanel
+            occupations={selectedJobs}
+            onRemove={handleRemoveSelected}
+          />
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Search Interface */}
             <Card className="p-6">
               <SearchInterface onOccupationSelect={handleOccupationSelect} />
             </Card>
 
-            {/* Enhanced Occupation Analysis */}
             {selectedOccupation && (
-              <OccupationAnalysis 
+              <OccupationAnalysis
                 occupation={selectedOccupation}
                 overallAPO={calculateOverallAPO(selectedOccupation)}
                 onAddToSelected={handleAddToSelected}
@@ -124,11 +172,9 @@ export const APODashboard = () => {
             )}
           </div>
 
-          {/* Enhanced Sidebar */}
           <div className="space-y-6">
             <TopCareersPanel />
-            
-            {/* Enhanced Selected Jobs Summary */}
+
             {selectedJobs.length > 0 && (
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -139,7 +185,7 @@ export const APODashboard = () => {
                     const overallAPO = calculateOverallAPO(job);
                     const riskLevel = overallAPO >= 70 ? 'High' : overallAPO >= 50 ? 'Med-High' : overallAPO >= 30 ? 'Medium' : 'Low';
                     const riskColor = overallAPO >= 70 ? 'text-red-600' : overallAPO >= 50 ? 'text-orange-600' : overallAPO >= 30 ? 'text-yellow-600' : 'text-green-600';
-                    
+
                     return (
                       <div key={job.code} className="p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
@@ -170,6 +216,33 @@ export const APODashboard = () => {
           </div>
         </div>
       </div>
+      {/* Export Modal (barebones, closes on export) */}
+      {showExport && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white shadow-lg rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-2">Export Careers Data</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Download the selected careers as a CSV file for further analysis or reporting.
+            </p>
+            <Button
+              onClick={() => {
+                exportToCSV(selectedJobs);
+                setShowExport(false);
+              }}
+              className="w-full mb-2"
+            >
+              Download CSV
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowExport(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
