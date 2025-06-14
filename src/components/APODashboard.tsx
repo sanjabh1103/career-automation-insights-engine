@@ -23,8 +23,8 @@ export const APODashboard = () => {
   const [selectedOccupation, setSelectedOccupation] = useState<SelectedOccupation | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
 
-  const handleOccupationSelect = (occupation: SelectedOccupation) => {
-    console.log('Selected occupation with APO data:', occupation);
+  const handleOccupationSelect = (occupation: any) => {
+    console.log('Selected occupation with enhanced APO data:', occupation);
     setSelectedOccupation(occupation);
   };
 
@@ -34,12 +34,18 @@ export const APODashboard = () => {
     }
   };
 
-  const calculateOverallAPO = (occupation: SelectedOccupation) => {
-    const taskAPO = occupation.tasks.reduce((sum, task) => sum + task.apo, 0) / occupation.tasks.length;
-    const knowledgeAPO = occupation.knowledge.reduce((sum, item) => sum + item.apo, 0) / occupation.knowledge.length;
-    const skillsAPO = occupation.skills.reduce((sum, skill) => sum + skill.apo, 0) / occupation.skills.length;
-    const abilitiesAPO = occupation.abilities.reduce((sum, ability) => sum + ability.apo, 0) / occupation.abilities.length;
-    const techAPO = occupation.technologies.reduce((sum, tech) => sum + tech.apo, 0) / occupation.technologies.length;
+  const calculateOverallAPO = (occupation: any) => {
+    // Use the enhanced overall APO if available, otherwise fall back to calculation
+    if (occupation.overallAPO !== undefined) {
+      return occupation.overallAPO;
+    }
+    
+    // Fallback calculation for backwards compatibility
+    const taskAPO = occupation.tasks?.reduce((sum: number, task: any) => sum + task.apo, 0) / (occupation.tasks?.length || 1);
+    const knowledgeAPO = occupation.knowledge?.reduce((sum: number, item: any) => sum + item.apo, 0) / (occupation.knowledge?.length || 1);
+    const skillsAPO = occupation.skills?.reduce((sum: number, skill: any) => sum + skill.apo, 0) / (occupation.skills?.length || 1);
+    const abilitiesAPO = occupation.abilities?.reduce((sum: number, ability: any) => sum + ability.apo, 0) / (occupation.abilities?.length || 1);
+    const techAPO = occupation.technologies?.reduce((sum: number, tech: any) => sum + tech.apo, 0) / (occupation.technologies?.length || 1);
     
     return (taskAPO + knowledgeAPO + skillsAPO + abilitiesAPO + techAPO) / 5;
   };
@@ -56,7 +62,7 @@ export const APODashboard = () => {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Career APO Explorer</h1>
               <div className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                AI-Powered
+                Enhanced AI v2.0
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -74,7 +80,7 @@ export const APODashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
+        {/* Enhanced Stats Overview */}
         <StatsOverview selectedJobsCount={selectedJobs.length} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
@@ -85,7 +91,7 @@ export const APODashboard = () => {
               <SearchInterface onOccupationSelect={handleOccupationSelect} />
             </Card>
 
-            {/* Occupation Analysis */}
+            {/* Enhanced Occupation Analysis */}
             {selectedOccupation && (
               <OccupationAnalysis 
                 occupation={selectedOccupation}
@@ -96,31 +102,46 @@ export const APODashboard = () => {
             )}
           </div>
 
-          {/* Sidebar */}
+          {/* Enhanced Sidebar */}
           <div className="space-y-6">
             <TopCareersPanel />
             
-            {/* Selected Jobs Summary */}
+            {/* Enhanced Selected Jobs Summary */}
             {selectedJobs.length > 0 && (
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Selected Careers ({selectedJobs.length})
                 </h3>
                 <div className="space-y-3">
-                  {selectedJobs.map((job) => (
-                    <div key={job.code} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm text-gray-900">{job.title}</p>
-                        <p className="text-xs text-gray-500">{job.code}</p>
+                  {selectedJobs.map((job) => {
+                    const overallAPO = calculateOverallAPO(job);
+                    const riskLevel = overallAPO >= 70 ? 'High' : overallAPO >= 50 ? 'Med-High' : overallAPO >= 30 ? 'Medium' : 'Low';
+                    const riskColor = overallAPO >= 70 ? 'text-red-600' : overallAPO >= 50 ? 'text-orange-600' : overallAPO >= 30 ? 'text-yellow-600' : 'text-green-600';
+                    
+                    return (
+                      <div key={job.code} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm text-gray-900">{job.title}</p>
+                            <p className="text-xs text-gray-500">{job.code}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-blue-600">
+                              {overallAPO.toFixed(1)}%
+                            </p>
+                            <p className={`text-xs font-medium ${riskColor}`}>
+                              {riskLevel} Risk
+                            </p>
+                          </div>
+                        </div>
+                        {job.timeline && (
+                          <Badge className="text-xs bg-blue-50 text-blue-700">
+                            {job.timeline}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-blue-600">
-                          {calculateOverallAPO(job).toFixed(1)}%
-                        </p>
-                        <p className="text-xs text-gray-500">APO</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </Card>
             )}
