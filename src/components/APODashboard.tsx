@@ -5,13 +5,15 @@ import { TopCareersPanel } from './TopCareersPanel';
 import { StatsOverview } from './StatsOverview';
 import { OccupationComparisonPanel } from './OccupationComparisonPanel';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Download, Upload, BarChart3 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { SavedSelectionsPanel } from "./SavedSelectionsPanel";
 import { useSavedSelections } from "@/hooks/useSavedSelections";
 
-interface SelectedOccupation {
+import { APODashboardHeader } from "./APODashboardHeader";
+import { ExportCareersModal } from "./ExportCareersModal";
+import { SelectedCareersPanel } from "./SelectedCareersPanel";
+import { exportToCSV } from "@/utils/exportToCSV";
+
+export interface SelectedOccupation {
   code: string;
   title: string;
   description: string;
@@ -43,43 +45,6 @@ interface SelectedOccupation {
   };
 }
 
-const exportToCSV = (occupations: SelectedOccupation[]) => {
-  if (!occupations.length) return;
-  const fields = [
-    "Code", "Title", "Overall APO (%)", "Confidence", "Timeline",
-    "Tasks APO", "Knowledge APO", "Skills APO", "Abilities APO", "Technologies APO"
-  ];
-
-  let csv =
-    fields.join(",") + "\n";
-
-  for (const occ of occupations) {
-    csv += [
-      `"${occ.code}"`,
-      `"${occ.title.replace(/"/g, '""')}"`,
-      `${occ.overallAPO?.toFixed(1) ?? ""}`,
-      `"${occ.confidence}"`,
-      `"${occ.timeline}"`,
-      `${occ.categoryBreakdown?.tasks?.apo?.toFixed(1) ?? ""}`,
-      `${occ.categoryBreakdown?.knowledge?.apo?.toFixed(1) ?? ""}`,
-      `${occ.categoryBreakdown?.skills?.apo?.toFixed(1) ?? ""}`,
-      `${occ.categoryBreakdown?.abilities?.apo?.toFixed(1) ?? ""}`,
-      `${occ.categoryBreakdown?.technologies?.apo?.toFixed(1) ?? ""}`,
-    ].join(",") + "\n";
-  }
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "APO_Career_Export.csv";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  }, 100);
-};
-
 export const APODashboard = () => {
   const [selectedOccupation, setSelectedOccupation] = useState<SelectedOccupation | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
@@ -105,10 +70,7 @@ export const APODashboard = () => {
 
   const handleLoadSelection = (newSelection: SelectedOccupation[]) => {
     setSelectedJobs(newSelection ?? []);
-    // Optionally clear current selectedOccupation too:
-    if (
-      !newSelection.find(occ => occ.code === selectedOccupation?.code)
-    ) {
+    if (!newSelection.find(occ => occ.code === selectedOccupation?.code)) {
       setSelectedOccupation(null);
     }
   };
@@ -128,48 +90,19 @@ export const APODashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 rounded-lg p-2">
-                <BarChart3 className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">Career APO Explorer</h1>
-              <div className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                Enhanced AI v2.0
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Data
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowExport(true)}
-                disabled={selectedJobs.length === 0}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export ({selectedJobs.length})
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <APODashboardHeader
+        selectedJobsCount={selectedJobs.length}
+        onExport={() => setShowExport(true)}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Enhanced Stats Overview */}
         <StatsOverview selectedJobsCount={selectedJobs.length} />
 
-        {/* Saved Selections Panel */}
         <SavedSelectionsPanel
           selections={selectedJobs}
           onLoad={handleLoadSelection}
         />
 
-        {/* Advanced Comparison Panel */}
         {selectedJobs.length > 1 && (
           <OccupationComparisonPanel
             occupations={selectedJobs}
@@ -197,73 +130,20 @@ export const APODashboard = () => {
             <TopCareersPanel />
 
             {selectedJobs.length > 0 && (
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Selected Careers ({selectedJobs.length})
-                </h3>
-                <div className="space-y-3">
-                  {selectedJobs.map((job) => {
-                    const overallAPO = calculateOverallAPO(job);
-                    const riskLevel = overallAPO >= 70 ? 'High' : overallAPO >= 50 ? 'Med-High' : overallAPO >= 30 ? 'Medium' : 'Low';
-                    const riskColor = overallAPO >= 70 ? 'text-red-600' : overallAPO >= 50 ? 'text-orange-600' : overallAPO >= 30 ? 'text-yellow-600' : 'text-green-600';
-
-                    return (
-                      <div key={job.code} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm text-gray-900">{job.title}</p>
-                            <p className="text-xs text-gray-500">{job.code}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-blue-600">
-                              {overallAPO.toFixed(1)}%
-                            </p>
-                            <p className={`text-xs font-medium ${riskColor}`}>
-                              {riskLevel} Risk
-                            </p>
-                          </div>
-                        </div>
-                        {job.timeline && (
-                          <Badge className="text-xs bg-blue-50 text-blue-700">
-                            {job.timeline}
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
+              <SelectedCareersPanel
+                selectedJobs={selectedJobs}
+                calculateOverallAPO={calculateOverallAPO}
+                handleRemoveSelected={handleRemoveSelected}
+              />
             )}
           </div>
         </div>
       </div>
-      {/* Export Modal (barebones, closes on export) */}
-      {showExport && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white shadow-lg rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-2">Export Careers Data</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Download the selected careers as a CSV file for further analysis or reporting.
-            </p>
-            <Button
-              onClick={() => {
-                exportToCSV(selectedJobs);
-                setShowExport(false);
-              }}
-              className="w-full mb-2"
-            >
-              Download CSV
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowExport(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <ExportCareersModal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        onExport={() => exportToCSV(selectedJobs)}
+      />
     </div>
   );
 };
