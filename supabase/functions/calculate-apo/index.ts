@@ -10,16 +10,38 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Calculate APO function invoked');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { occupation } = await req.json();
-
     if (!geminiApiKey) {
+      console.error('Gemini API key is not configured');
       throw new Error('Gemini API key is not configured');
+    }
+
+    const requestBody = await req.text();
+    console.log('Request body:', requestBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { occupation } = parsedBody;
+    
+    if (!occupation) {
+      console.error('No occupation provided in request');
+      throw new Error('Occupation data is required');
     }
 
     console.log(`Calculating APO for occupation: ${occupation.title} (${occupation.code})`);
@@ -90,6 +112,7 @@ Please respond in the following JSON format:
 }
 `;
 
+    console.log('Making request to Gemini API');
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
@@ -110,6 +133,8 @@ Please respond in the following JSON format:
       }),
     });
 
+    console.log('Gemini API response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API Error:', errorText);
@@ -117,9 +142,15 @@ Please respond in the following JSON format:
     }
 
     const data = await response.json();
-    const generatedText = data.candidates[0].content.parts[0].text;
+    console.log('Gemini API response received');
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error('Invalid response structure from Gemini API:', data);
+      throw new Error('Invalid response from Gemini API');
+    }
 
-    console.log('Gemini response:', generatedText);
+    const generatedText = data.candidates[0].content.parts[0].text;
+    console.log('Generated text length:', generatedText.length);
 
     // Extract JSON from the response
     let apoData;
@@ -128,11 +159,14 @@ Please respond in the following JSON format:
       const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         apoData = JSON.parse(jsonMatch[0]);
+        console.log('Successfully parsed APO data');
       } else {
+        console.error('No JSON found in Gemini response');
         throw new Error('No JSON found in response');
       }
     } catch (parseError) {
       console.error('Failed to parse Gemini response as JSON:', parseError);
+      console.error('Response text:', generatedText);
       throw new Error('Failed to parse APO analysis from Gemini');
     }
 
@@ -148,12 +182,18 @@ Please respond in the following JSON format:
       technologies: apoData.technologies.items,
     };
 
+    console.log('Successfully transformed APO data');
+
     return new Response(JSON.stringify(transformedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in calculate-apo function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      function: 'calculate-apo'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
