@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { SavedSelectionsPanel } from "./SavedSelectionsPanel";
+import { useSavedSelections } from "@/hooks/useSavedSelections";
 
 interface SelectedOccupation {
   code: string;
@@ -83,6 +85,9 @@ export const APODashboard = () => {
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
   const [showExport, setShowExport] = useState(false);
 
+  // Load/Save support using local storage
+  const savedSelections = useSavedSelections<SelectedOccupation[]>();
+
   const handleOccupationSelect = (occupation: any) => {
     console.log('Selected occupation with enhanced APO data:', occupation);
     setSelectedOccupation(occupation);
@@ -96,6 +101,16 @@ export const APODashboard = () => {
 
   const handleRemoveSelected = (code: string) => {
     setSelectedJobs(selectedJobs.filter(job => job.code !== code));
+  };
+
+  const handleLoadSelection = (newSelection: SelectedOccupation[]) => {
+    setSelectedJobs(newSelection ?? []);
+    // Optionally clear current selectedOccupation too:
+    if (
+      !newSelection.find(occ => occ.code === selectedOccupation?.code)
+    ) {
+      setSelectedOccupation(null);
+    }
   };
 
   const calculateOverallAPO = (occupation: any) => {
@@ -147,6 +162,12 @@ export const APODashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Stats Overview */}
         <StatsOverview selectedJobsCount={selectedJobs.length} />
+
+        {/* Saved Selections Panel */}
+        <SavedSelectionsPanel
+          selections={selectedJobs}
+          onLoad={handleLoadSelection}
+        />
 
         {/* Advanced Comparison Panel */}
         {selectedJobs.length > 1 && (
