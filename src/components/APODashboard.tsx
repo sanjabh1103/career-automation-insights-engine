@@ -6,17 +6,39 @@ import { TopCareersPanel } from './TopCareersPanel';
 import { StatsOverview } from './StatsOverview';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Upload, BarChart3, Briefcase } from 'lucide-react';
+import { Download, Upload, BarChart3 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface SelectedOccupation {
   code: string;
   title: string;
   description: string;
-  tasks: Array<{ description: string; apo: number }>;
-  knowledge: Array<{ description: string; apo: number }>;
-  skills: Array<{ description: string; apo: number }>;
-  abilities: Array<{ description: string; apo: number }>;
-  technologies: Array<{ description: string; apo: number }>;
+  overallAPO: number;
+  confidence: string;
+  timeline: string;
+  tasks: Array<{ description: string; apo: number; factors?: string[]; timeline?: string }>;
+  knowledge: Array<{ description: string; apo: number; factors?: string[]; timeline?: string }>;
+  skills: Array<{ description: string; apo: number; factors?: string[]; timeline?: string }>;
+  abilities: Array<{ description: string; apo: number; factors?: string[]; timeline?: string }>;
+  technologies: Array<{ description: string; apo: number; factors?: string[]; timeline?: string }>;
+  categoryBreakdown: {
+    tasks: { apo: number; confidence: string };
+    knowledge: { apo: number; confidence: string };
+    skills: { apo: number; confidence: string };
+    abilities: { apo: number; confidence: string };
+    technologies: { apo: number; confidence: string };
+  };
+  insights: {
+    primary_opportunities: string[];
+    main_challenges: string[];
+    automation_drivers: string[];
+    barriers: string[];
+  };
+  metadata: {
+    analysis_version: string;
+    calculation_method: string;
+    timestamp: string;
+  };
 }
 
 export const APODashboard = () => {
