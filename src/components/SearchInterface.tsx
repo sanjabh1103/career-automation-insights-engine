@@ -14,6 +14,7 @@ interface SearchInterfaceProps {
 export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [isCalculatingAPO, setIsCalculatingAPO] = useState(false);
   const { toast } = useToast();
 
   const { mutate: searchOccupations, isPending: isLoading } = useMutation({
@@ -50,6 +51,45 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
     },
   });
 
+  const handleOccupationClick = async (occupation: any) => {
+    setIsCalculatingAPO(true);
+    
+    try {
+      console.log('Calculating APO for:', occupation);
+      
+      const { data, error } = await supabase.functions.invoke('calculate-apo', {
+        body: { occupation },
+      });
+
+      if (error) {
+        console.error('APO calculation error:', error);
+        throw new Error(`APO calculation failed: ${error.message}`);
+      }
+
+      if (data.error) {
+        console.error('APO calculation API error:', data.error);
+        throw new Error(`APO calculation error: ${data.error}`);
+      }
+
+      console.log('APO calculation successful:', data);
+      onOccupationSelect(data);
+      
+      toast({
+        title: 'APO Analysis Complete',
+        description: `Automation potential calculated for ${occupation.title}`,
+      });
+    } catch (error) {
+      console.error('Failed to calculate APO:', error);
+      toast({
+        variant: 'destructive',
+        title: 'APO Calculation Failed',
+        description: error instanceof Error ? error.message : 'Failed to calculate automation potential',
+      });
+    } finally {
+      setIsCalculatingAPO(false);
+    }
+  };
+
   const handleSearch = () => {
     if (searchTerm.trim()) {
       setResults([]);
@@ -68,7 +108,7 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Career Search</h2>
         <p className="text-gray-600 text-sm">
-          Search for occupations to analyze their automation potential
+          Search for occupations to analyze their automation potential using AI
         </p>
       </div>
 
@@ -98,7 +138,7 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
               <div
                 key={result.code}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200"
-                onClick={() => onOccupationSelect(result)}
+                onClick={() => handleOccupationClick(result)}
               >
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 rounded-lg p-2 mt-1">
@@ -112,6 +152,16 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* APO Calculation Loading */}
+      {isCalculatingAPO && (
+        <div className="text-center py-8">
+          <div className="inline-flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-gray-600">Calculating automation potential with AI...</span>
           </div>
         </div>
       )}

@@ -23,41 +23,9 @@ export const APODashboard = () => {
   const [selectedOccupation, setSelectedOccupation] = useState<SelectedOccupation | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
 
-  // Mock data for demonstration
-  const mockOccupation: SelectedOccupation = {
-    code: '47-4011.01',
-    title: 'Energy Auditors',
-    description: 'Conduct energy audits of buildings, building systems, or process systems. May also conduct investment grade audits of buildings or systems.',
-    tasks: [
-      { description: 'Identify and prioritize energy-saving measures', apo: 46.79 },
-      { description: 'Prepare audit reports containing energy analysis results', apo: 46.79 },
-      { description: 'Calculate potential for energy savings', apo: 46.79 },
-      { description: 'Inspect or evaluate building envelopes and systems', apo: 46.79 },
-    ],
-    knowledge: [
-      { description: 'Customer and Personal Service', apo: 40.00 },
-      { description: 'Building and Construction', apo: 47.08 },
-      { description: 'Mathematics', apo: 70.00 },
-    ],
-    skills: [
-      { description: 'Critical Thinking', apo: 45.00 },
-      { description: 'Reading Comprehension', apo: 42.00 },
-      { description: 'Active Listening', apo: 38.00 },
-    ],
-    abilities: [
-      { description: 'Oral Comprehension', apo: 48.00 },
-      { description: 'Written Comprehension', apo: 50.00 },
-      { description: 'Problem Sensitivity', apo: 46.00 },
-    ],
-    technologies: [
-      { description: 'Microsoft Excel', apo: 65.00 },
-      { description: 'Energy analysis software', apo: 58.00 },
-      { description: 'Building information modeling BIM software', apo: 52.00 },
-    ]
-  };
-
-  const handleOccupationSelect = (occupation: any) => {
-    setSelectedOccupation(mockOccupation); // Using mock data for demo
+  const handleOccupationSelect = (occupation: SelectedOccupation) => {
+    console.log('Selected occupation with APO data:', occupation);
+    setSelectedOccupation(occupation);
   };
 
   const handleAddToSelected = () => {
@@ -87,6 +55,9 @@ export const APODashboard = () => {
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Career APO Explorer</h1>
+              <div className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                AI-Powered
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" size="sm">
