@@ -47,7 +47,9 @@ export function useAPOCalculation() {
 
       if (cached && cached.analysis_data) {
         setIsCalculating(false);
-        return cached.analysis_data as APOAnalysis;
+        // Properly type check and cast the cached data
+        const analysisData = cached.analysis_data as unknown as APOAnalysis;
+        return analysisData;
       }
 
       // Calculate new APO analysis
