@@ -25,6 +25,14 @@ export interface SharedAnalysis {
   analysis_id: string;
 }
 
+interface ShareViewResponse {
+  success?: boolean;
+  analysis?: any;
+  shared_by?: string;
+  view_count?: number;
+  error?: string;
+}
+
 export function useShareAnalysis() {
   const [isSharing, setIsSharing] = useState(false);
   const queryClient = useQueryClient();
@@ -77,7 +85,7 @@ export function useShareAnalysis() {
     }
   });
 
-  const getSharedAnalysis = async (shareToken: string) => {
+  const getSharedAnalysis = async (shareToken: string): Promise<ShareViewResponse> => {
     try {
       setIsSharing(true);
       const { data, error } = await supabase.rpc('increment_share_view', {
@@ -86,11 +94,14 @@ export function useShareAnalysis() {
 
       if (error) throw error;
       
-      if (data?.error) {
-        throw new Error(data.error);
+      // Type cast the Json response to our expected interface
+      const response = data as ShareViewResponse;
+      
+      if (response?.error) {
+        throw new Error(response.error);
       }
 
-      return data;
+      return response;
     } catch (error) {
       console.error('Error getting shared analysis:', error);
       throw error;

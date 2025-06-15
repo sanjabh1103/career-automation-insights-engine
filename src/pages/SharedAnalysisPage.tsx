@@ -4,6 +4,7 @@ import { useParams, Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OccupationAnalysis } from "@/components/OccupationAnalysis";
 import { useShareAnalysis } from "@/hooks/useShareAnalysis";
@@ -48,7 +49,7 @@ export default function SharedAnalysisPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner size="large" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -152,9 +153,9 @@ export default function SharedAnalysisPage() {
 
         {analysis?.analysis_data && (
           <OccupationAnalysis 
-            analysis={analysis.analysis_data}
-            occupationTitle={analysis.occupation_title}
-            isSharedView={true}
+            data={analysis.analysis_data}
+            title={analysis.occupation_title}
+            readOnly={true}
           />
         )}
       </div>
