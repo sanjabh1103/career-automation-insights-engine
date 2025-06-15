@@ -390,6 +390,30 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          created_at: string | null
+          event_details: Json | null
+          event_type: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_details?: Json | null
+          event_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_details?: Json | null
+          event_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_reports: {
         Row: {
           audit_id: string

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, X, CheckCircle, AlertTriangle, Info, AlertCircle, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,13 @@ interface NotificationGroup {
   count: number;
   latest: Notification;
   notifications: Notification[];
+}
+
+interface NotificationMetadata {
+  important?: boolean;
+  action_url?: string;
+  expires_at?: string;
+  [key: string]: any;
 }
 
 export function EnhancedNotificationSystem() {
@@ -135,19 +141,23 @@ export function EnhancedNotificationSystem() {
         throw error;
       }
       
-      return (data || []).map(item => ({
-        id: item.id,
-        title: item.title,
-        message: item.message,
-        type: (item.type as 'info' | 'success' | 'warning' | 'error') || 'info',
-        read: item.read || false,
-        important: item.metadata?.important || false,
-        created_at: item.created_at || new Date().toISOString(),
-        metadata: item.metadata,
-        user_id: item.user_id || '',
-        action_url: item.metadata?.action_url,
-        expires_at: item.metadata?.expires_at
-      }));
+      return (data || []).map(item => {
+        const metadata = item.metadata as NotificationMetadata | null;
+        
+        return {
+          id: item.id,
+          title: item.title,
+          message: item.message,
+          type: (item.type as 'info' | 'success' | 'warning' | 'error') || 'info',
+          read: item.read || false,
+          important: metadata?.important || false,
+          created_at: item.created_at || new Date().toISOString(),
+          metadata: metadata,
+          user_id: item.user_id || '',
+          action_url: metadata?.action_url,
+          expires_at: metadata?.expires_at
+        };
+      });
     },
     enabled: !!user,
   });

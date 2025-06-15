@@ -114,6 +114,54 @@ export function AccessibilityToolbar() {
     }
   };
 
+  // Add CSS styles to head instead of using jsx attribute
+  useEffect(() => {
+    const styleId = 'accessibility-styles';
+    let existingStyle = document.getElementById(styleId);
+    
+    if (!existingStyle) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .accessibility-high-contrast {
+          filter: contrast(1.5);
+        }
+        
+        .accessibility-large-text {
+          font-size: 120% !important;
+        }
+        
+        .accessibility-large-text * {
+          font-size: inherit !important;
+        }
+        
+        .accessibility-reduced-motion * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        
+        .accessibility-focus-indicators *:focus {
+          outline: 3px solid #0066cc !important;
+          outline-offset: 2px !important;
+        }
+        
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <div className="fixed top-4 right-4 z-50">
       <Button
@@ -243,44 +291,6 @@ export function AccessibilityToolbar() {
           </div>
         </Card>
       )}
-
-      {/* Add corresponding CSS */}
-      <style jsx global>{`
-        .accessibility-high-contrast {
-          filter: contrast(1.5);
-        }
-        
-        .accessibility-large-text {
-          font-size: 120% !important;
-        }
-        
-        .accessibility-large-text * {
-          font-size: inherit !important;
-        }
-        
-        .accessibility-reduced-motion * {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-        }
-        
-        .accessibility-focus-indicators *:focus {
-          outline: 3px solid #0066cc !important;
-          outline-offset: 2px !important;
-        }
-        
-        .sr-only {
-          position: absolute;
-          width: 1px;
-          height: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip: rect(0, 0, 0, 0);
-          white-space: nowrap;
-          border: 0;
-        }
-      `}</style>
     </div>
   );
 }
