@@ -1,6 +1,14 @@
 
+// Supabase does not export the Json type, so we define it here:
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@supabase/supabase-js";
 
 /**
  * Track an analytics event for the current user (basic interface).
@@ -36,3 +44,4 @@ export async function trackAnalyticsEvent(payload: {
     console.warn("Analytics event not tracked:", error);
   }
 }
+

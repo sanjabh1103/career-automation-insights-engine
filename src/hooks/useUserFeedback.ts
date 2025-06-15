@@ -1,8 +1,17 @@
 
+// Supabase does not export the Json type, so we define it here:
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Json } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 
 export type FeedbackType = "bug_report" | "feature_request" | "general" | "support";
 export type FeedbackPriority = "low" | "medium" | "high" | "urgent";
@@ -133,3 +142,4 @@ export function useUserFeedback() {
     user,
   };
 }
+
