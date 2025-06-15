@@ -1176,6 +1176,42 @@ export type Database = {
           },
         ]
       }
+      saved_analyses: {
+        Row: {
+          analysis_data: Json
+          created_at: string
+          id: string
+          notes: string | null
+          occupation_code: string
+          occupation_title: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occupation_code: string
+          occupation_title: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occupation_code?: string
+          occupation_title?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_audits: {
         Row: {
           created_at: string
@@ -1211,6 +1247,30 @@ export type Database = {
           next_run_at?: string
           updated_at?: string
           url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_history: {
+        Row: {
+          id: string
+          results_count: number | null
+          search_term: string
+          searched_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          results_count?: number | null
+          search_term: string
+          searched_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          results_count?: number | null
+          search_term?: string
+          searched_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1354,6 +1414,30 @@ export type Database = {
           selections?: Json
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

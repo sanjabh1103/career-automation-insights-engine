@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,8 +7,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import UserDashboardPage from "./pages/UserDashboardPage";
 import { useSession } from "@/hooks/useSession";
 import { LogoutButton } from "@/components/LogoutButton";
+import { Button } from "@/components/ui/button";
+import { User } from "lucide-react";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -28,17 +32,40 @@ const AppRoutes = () => {
       {/* Auth route: only show if not logged in */}
       <Route
         path="/auth"
-        element={!user ? <Auth /> : <React.Fragment>{null}</React.Fragment>}
+        element={!user ? <Auth /> : <Navigate to="/" replace />}
       />
-      {/* Redirect authenticated users away from /auth */}
+      {/* User Dashboard - protected route */}
+      <Route
+        path="/dashboard"
+        element={
+          user ? (
+            <UserDashboardPage />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      {/* Main route */}
       <Route
         path="/"
         element={
           user ? (
             <>
-              {/* Optional: place logout button in a top bar for demo purposes */}
-              <div className="w-full flex justify-end p-4 pr-8">
-                <LogoutButton />
+              {/* Top navigation bar */}
+              <div className="w-full flex justify-between items-center p-4 pr-8 bg-white border-b">
+                <h1 className="text-lg font-semibold text-gray-800">APO Dashboard</h1>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Dashboard
+                  </Button>
+                  <LogoutButton />
+                </div>
               </div>
               <Index />
             </>
