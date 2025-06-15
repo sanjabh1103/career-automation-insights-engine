@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Activity, Database, Server, AlertCircle, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -22,8 +21,8 @@ export function SystemHealthMonitor() {
       const { data, error } = await supabase.rpc('health_check');
       if (error) throw error;
       
-      // Type assertion for the response data
-      return data as HealthStatus;
+      // Type assertion for the response data - cast to unknown first, then to HealthStatus
+      return data as unknown as HealthStatus;
     },
     refetchInterval: 30000, // Check every 30 seconds
   });
