@@ -134,7 +134,9 @@ export function createValidationMiddleware<T>(schema: z.ZodSchema<T>) {
     const validation = validateAndSanitizeInput(input, schema);
     
     if (!validation.success) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      // Fix: only access errors if validation.success is false
+      const errorList = "errors" in validation ? validation.errors : ["Unknown validation error"];
+      throw new Error(`Validation failed: ${errorList.join(', ')}`);
     }
     
     return validation.data;
