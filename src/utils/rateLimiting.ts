@@ -48,6 +48,11 @@ class RateLimiter {
     return entry?.resetTime || Date.now();
   }
 
+  getTimeUntilReset(key: string): number {
+    const resetTime = this.getResetTime(key);
+    return Math.max(0, resetTime - Date.now());
+  }
+
   cleanup(): void {
     const now = Date.now();
     for (const [key, entry] of this.limits.entries()) {
@@ -74,10 +79,23 @@ export function checkRateLimit(limiter: RateLimiter, userId: string): {
   allowed: boolean;
   remaining: number;
   resetTime: number;
+  timeUntilReset: number;
 } {
   const allowed = limiter.isAllowed(userId);
   const remaining = limiter.getRemainingRequests(userId);
   const resetTime = limiter.getResetTime(userId);
+  const timeUntilReset = limiter.getTimeUntilReset(userId);
 
-  return { allowed, remaining, resetTime };
+  return { allowed, remaining, resetTime, timeUntilReset };
+}
+
+export function formatTimeUntilReset(milliseconds: number): string {
+  const seconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (minutes > 0) {
+    return `${minutes}m ${remainingSeconds}s`;
+  }
+  return `${remainingSeconds}s`;
 }

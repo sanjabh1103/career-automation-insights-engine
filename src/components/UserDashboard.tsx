@@ -5,7 +5,8 @@ import { UserProfilePanel } from "./UserProfilePanel";
 import { UserSettingsPanel } from "./UserSettingsPanel";
 import { SavedAnalysesPanel } from "./SavedAnalysesPanel";
 import { SearchHistoryPanel } from "./SearchHistoryPanel";
-import { User, Settings, BookOpen, History } from "lucide-react";
+import { SystemAdminPanel } from "./SystemAdminPanel";
+import { User, Settings, BookOpen, History, Activity } from "lucide-react";
 
 interface UserDashboardProps {
   onLoadAnalysis?: (analysis: any) => void;
@@ -21,7 +22,7 @@ export function UserDashboard({ onLoadAnalysis, onSearchSelect }: UserDashboardP
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="w-4 h-4" />
             Profile
@@ -37,6 +38,10 @@ export function UserDashboard({ onLoadAnalysis, onSearchSelect }: UserDashboardP
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Settings
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            System
           </TabsTrigger>
         </TabsList>
 
@@ -54,6 +59,10 @@ export function UserDashboard({ onLoadAnalysis, onSearchSelect }: UserDashboardP
 
         <TabsContent value="settings" className="mt-6">
           <UserSettingsPanel />
+        </TabsContent>
+
+        <TabsContent value="system" className="mt-6">
+          <SystemAdminPanel />
         </TabsContent>
       </Tabs>
     </div>

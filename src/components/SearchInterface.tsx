@@ -10,6 +10,9 @@ import { sanitizeSearchInput, sanitizeOccupationCode } from '@/utils/inputSaniti
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { RateLimitDisplay } from './RateLimitDisplay';
+import { searchRateLimiter, checkRateLimit, formatTimeUntilReset } from '@/utils/rateLimiting';
+import { useSession } from '@/hooks/useSession';
 
 interface SearchInterfaceProps {
   onOccupationSelect: (occupation: any) => void;
@@ -23,9 +26,17 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
   const [results, setResults] = useState<any[]>([]);
   const [isCalculatingAPO, setIsCalculatingAPO] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [rateLimitStatus, setRateLimitStatus] = useState({
+    allowed: true,
+    remaining: 20,
+    resetTime: Date.now(),
+    timeUntilReset: 0
+  });
+  
   const resultsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { addSearch } = useSearchHistory();
+  const { user } = useSession();
 
   React.useEffect(() => {
     if (results.length && resultsRef.current) {
@@ -33,8 +44,26 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
     }
   }, [results.length]);
 
+  // Update rate limit status
+  React.useEffect(() => {
+    if (user) {
+      const status = checkRateLimit(searchRateLimiter, user.id);
+      setRateLimitStatus(status);
+    }
+  }, [user]);
+
   const { mutate: searchOccupations, isPending: isLoading } = useMutation({
     mutationFn: async ({ term, filter }: { term: string; filter: string }) => {
+      if (!user) throw new Error('Authentication required');
+
+      // Check rate limiting before proceeding
+      const rateCheck = checkRateLimit(searchRateLimiter, user.id);
+      setRateLimitStatus(rateCheck);
+      
+      if (!rateCheck.allowed) {
+        throw new Error(`Rate limit exceeded. Try again in ${formatTimeUntilReset(rateCheck.timeUntilReset)}`);
+      }
+
       // Sanitize inputs
       const sanitizedTerm = sanitizeSearchInput(term);
       const sanitizedFilter = filter ? sanitizeOccupationCode(filter) : '';
@@ -81,6 +110,12 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
         search_term: searchTerm,
         results_count: processedResults.length
       });
+
+      // Update rate limit status after successful search
+      if (user) {
+        const status = checkRateLimit(searchRateLimiter, user.id);
+        setRateLimitStatus(status);
+      }
     },
     onError: (error: Error) => {
       console.error('Search failed:', error);
@@ -121,6 +156,15 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
   };
 
   const handleSearch = () => {
+    if (!rateLimitStatus.allowed) {
+      toast({
+        variant: 'destructive',
+        title: 'Rate Limit Exceeded',
+        description: `Please wait ${formatTimeUntilReset(rateLimitStatus.timeUntilReset)} before searching again.`,
+      });
+      return;
+    }
+
     const trimmedTerm = searchTerm.trim();
     if (trimmedTerm) {
       setResults([]);
@@ -165,6 +209,16 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
             Search for occupations to analyze their automation potential using AI
           </p>
         </div>
+
+        {/* Rate Limit Display */}
+        <RateLimitDisplay
+          remaining={rateLimitStatus.remaining}
+          total={20}
+          resetTime={rateLimitStatus.resetTime}
+          timeUntilReset={rateLimitStatus.timeUntilReset}
+          label="Search Requests"
+          variant="search"
+        />
         
         <div className="flex space-x-2" role="search" aria-label="Occupation Search Bar">
           <div className="flex-1 relative">
@@ -191,7 +245,7 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
           </Button>
           <Button 
             onClick={handleSearch} 
-            disabled={isLoading || !searchTerm.trim()} 
+            disabled={isLoading || !searchTerm.trim() || !rateLimitStatus.allowed} 
             aria-label="Search"
           >
             {isLoading ? 'Searching...' : 'Search'}

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import { SecurityHeaders } from "@/components/SecurityHeaders";
 import { AccessibilityProvider } from "@/components/AccessibilityProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { APICreditsDisplay } from "@/components/APICreditsDisplay";
+import { NotificationSystem } from "@/components/NotificationSystem";
 import React from "react";
 
 const queryClient = new QueryClient({
@@ -76,6 +78,7 @@ const AppRoutes = () => {
                   <APICreditsDisplay />
                 </div>
                 <div className="flex items-center gap-2">
+                  <NotificationSystem />
                   <Button 
                     variant="outline" 
                     size="sm"
