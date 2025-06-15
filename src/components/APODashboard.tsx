@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { OccupationAnalysis } from './OccupationAnalysis';
@@ -14,6 +13,7 @@ import { APODashboardHeader } from "./APODashboardHeader";
 import { ExportCareersModal } from "./ExportCareersModal";
 import { SelectedCareersPanel } from "./SelectedCareersPanel";
 import { exportToCSV } from "@/utils/exportToCSV";
+import { OnboardingTour } from "./OnboardingTour";
 
 export interface SelectedOccupation {
   code: string;
@@ -91,6 +91,10 @@ export const APODashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Onboarding Tour - shown only if not completed */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <OnboardingTour />
+      </div>
       {/* Header */}
       <APODashboardHeader
         selectedJobsCount={selectedJobs.length}
