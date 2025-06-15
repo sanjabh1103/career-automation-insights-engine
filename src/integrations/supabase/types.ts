@@ -1639,6 +1639,59 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_analyses: {
+        Row: {
+          analysis_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_views: number | null
+          share_token: string
+          share_type: string
+          shared_with_email: string | null
+          updated_at: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          analysis_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_views?: number | null
+          share_token?: string
+          share_type?: string
+          shared_with_email?: string | null
+          updated_at?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          analysis_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_views?: number | null
+          share_token?: string
+          share_type?: string
+          shared_with_email?: string | null
+          updated_at?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_analyses_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "saved_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_assessments: {
         Row: {
           assessment_method: string | null
@@ -2174,6 +2227,10 @@ export type Database = {
       hnswhandler: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      increment_share_view: {
+        Args: { share_token_param: string }
+        Returns: Json
       }
       ivfflat_bit_support: {
         Args: { "": unknown }

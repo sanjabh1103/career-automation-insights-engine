@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { BookOpen, Trash2, Edit3, Plus, Tag, FileText } from "lucide-react";
+import { BookOpen, Trash2, Edit3, Plus, Tag, FileText, Share2 } from "lucide-react";
 import { useSavedAnalyses } from "@/hooks/useSavedAnalyses";
+import { ShareAnalysisModal } from "./ShareAnalysisModal";
 import { toast } from "sonner";
 
 interface SavedAnalysesPanelProps {
@@ -19,6 +20,8 @@ export function SavedAnalysesPanel({ onLoadAnalysis }: SavedAnalysesPanelProps) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTags, setEditTags] = useState<string>("");
   const [editNotes, setEditNotes] = useState<string>("");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedAnalysisForShare, setSelectedAnalysisForShare] = useState<any>(null);
 
   const handleEdit = (analysis: any) => {
     setEditingId(analysis.id);
@@ -54,6 +57,11 @@ export function SavedAnalysesPanel({ onLoadAnalysis }: SavedAnalysesPanelProps) 
     }
   };
 
+  const handleShare = (analysis: any) => {
+    setSelectedAnalysisForShare(analysis);
+    setShareModalOpen(true);
+  };
+
   if (isLoading) {
     return (
       <Card className="p-6">
@@ -66,118 +74,140 @@ export function SavedAnalysesPanel({ onLoadAnalysis }: SavedAnalysesPanelProps) 
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <BookOpen className="w-5 h-5 text-green-500" />
-        <h3 className="text-lg font-semibold">Saved Analyses</h3>
-        <Badge variant="secondary" className="ml-auto">
-          {savedAnalyses.length}
-        </Badge>
-      </div>
+    <>
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpen className="w-5 h-5 text-green-500" />
+          <h3 className="text-lg font-semibold">Saved Analyses</h3>
+          <Badge variant="secondary" className="ml-auto">
+            {savedAnalyses.length}
+          </Badge>
+        </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {savedAnalyses.length === 0 ? (
-          <p className="text-gray-500 text-sm">No saved analyses yet.</p>
-        ) : (
-          savedAnalyses.map((analysis) => (
-            <div key={analysis.id} className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">{analysis.occupation_title}</h4>
-                  <p className="text-xs text-gray-500">Code: {analysis.occupation_code}</p>
-                </div>
-                <div className="flex gap-1">
-                  {onLoadAnalysis && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onLoadAnalysis(analysis)}
-                      title="Load analysis"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  )}
-                  <Dialog>
-                    <DialogTrigger asChild>
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {savedAnalyses.length === 0 ? (
+            <p className="text-gray-500 text-sm">No saved analyses yet.</p>
+          ) : (
+            savedAnalyses.map((analysis) => (
+              <div key={analysis.id} className="border rounded-lg p-4 bg-gray-50">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{analysis.occupation_title}</h4>
+                    <p className="text-xs text-gray-500">Code: {analysis.occupation_code}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    {onLoadAnalysis && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleEdit(analysis)}
-                        title="Edit analysis"
+                        onClick={() => onLoadAnalysis(analysis)}
+                        title="Load analysis"
                       >
-                        <Edit3 className="w-3 h-3" />
+                        <Plus className="w-3 h-3" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Edit Analysis</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            <Tag className="w-4 h-4" />
-                            Tags (comma-separated)
-                          </label>
-                          <Input
-                            value={editTags}
-                            onChange={(e) => setEditTags(e.target.value)}
-                            placeholder="e.g., healthcare, high-demand, remote-friendly"
-                          />
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleShare(analysis)}
+                      title="Share analysis"
+                    >
+                      <Share2 className="w-3 h-3" />
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(analysis)}
+                          title="Edit analysis"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Analysis</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                              <Tag className="w-4 h-4" />
+                              Tags (comma-separated)
+                            </label>
+                            <Input
+                              value={editTags}
+                              onChange={(e) => setEditTags(e.target.value)}
+                              placeholder="e.g., healthcare, high-demand, remote-friendly"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Notes
+                            </label>
+                            <Textarea
+                              value={editNotes}
+                              onChange={(e) => setEditNotes(e.target.value)}
+                              placeholder="Add your personal notes about this occupation..."
+                              rows={3}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={handleSaveEdit} className="flex-1">
+                              Save Changes
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            Notes
-                          </label>
-                          <Textarea
-                            value={editNotes}
-                            onChange={(e) => setEditNotes(e.target.value)}
-                            placeholder="Add your personal notes about this occupation..."
-                            rows={3}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button onClick={handleSaveEdit} className="flex-1">
-                            Save Changes
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(analysis.id)}
-                    title="Delete analysis"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(analysis.id)}
+                      title="Delete analysis"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {analysis.tags && analysis.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {analysis.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {analysis.notes && (
+                  <p className="text-xs text-gray-600 bg-white p-2 rounded border">
+                    {analysis.notes}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                  <span>Saved {new Date(analysis.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
+            ))
+          )}
+        </div>
+      </Card>
 
-              {analysis.tags && analysis.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {analysis.tags.map((tag, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {analysis.notes && (
-                <p className="text-xs text-gray-600 bg-white p-2 rounded border">
-                  {analysis.notes}
-                </p>
-              )}
-
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <span>Saved {new Date(analysis.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </Card>
+      {selectedAnalysisForShare && (
+        <ShareAnalysisModal
+          open={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSelectedAnalysisForShare(null);
+          }}
+          analysisId={selectedAnalysisForShare.id}
+          occupationTitle={selectedAnalysisForShare.occupation_title}
+        />
+      )}
+    </>
   );
 }
