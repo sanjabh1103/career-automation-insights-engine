@@ -50,14 +50,20 @@ export function useUserSettings() {
         .from('user_settings')
         .select('settings')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user settings:', error);
         return DEFAULT_SETTINGS;
       }
-      
-      return { ...DEFAULT_SETTINGS, ...(data?.settings || {}) };
+
+      // Defensive: force settings to be an object if possible
+      let settingsObj = {};
+      if (data && typeof data.settings === 'object' && data.settings !== null) {
+        settingsObj = data.settings;
+      }
+
+      return { ...DEFAULT_SETTINGS, ...settingsObj };
     },
     enabled: !!user,
   });
