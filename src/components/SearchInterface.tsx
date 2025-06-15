@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Briefcase, Filter } from 'lucide-react';
+import { Search, Briefcase, Filter, LogIn } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,6 +13,7 @@ import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { RateLimitDisplay } from './RateLimitDisplay';
 import { searchRateLimiter, checkRateLimit, formatTimeUntilReset } from '@/utils/rateLimiting';
 import { useSession } from '@/hooks/useSession';
+import { useNavigate } from 'react-router-dom';
 
 interface SearchInterfaceProps {
   onOccupationSelect: (occupation: any) => void;
@@ -36,7 +37,8 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
   const resultsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { addSearch } = useSearchHistory();
-  const { user } = useSession();
+  const { user, loading } = useSession();
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     if (results.length && resultsRef.current) {
@@ -54,7 +56,9 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
 
   const { mutate: searchOccupations, isPending: isLoading } = useMutation({
     mutationFn: async ({ term, filter }: { term: string; filter: string }) => {
-      if (!user) throw new Error('Authentication required');
+      if (!user) {
+        throw new Error('Please sign in to search for occupations');
+      }
 
       // Check rate limiting before proceeding
       const rateCheck = checkRateLimit(searchRateLimiter, user.id);
@@ -106,10 +110,12 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
       setResults(processedResults);
       
       // Track search in history
-      addSearch({
-        search_term: searchTerm,
-        results_count: processedResults.length
-      });
+      if (user) {
+        addSearch({
+          search_term: searchTerm,
+          results_count: processedResults.length
+        });
+      }
 
       // Update rate limit status after successful search
       if (user) {
@@ -129,6 +135,16 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
   });
 
   const handleOccupationClick = async (occupation: any) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please sign in to analyze occupations',
+      });
+      navigate('/auth');
+      return;
+    }
+
     setIsCalculatingAPO(true);
     try {
       const { data, error } = await supabase.functions.invoke('calculate-apo', {
@@ -156,6 +172,16 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
   };
 
   const handleSearch = () => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please sign in to search for occupations',
+      });
+      navigate('/auth');
+      return;
+    }
+
     if (!rateLimitStatus.allowed) {
       toast({
         variant: 'destructive',
@@ -197,6 +223,46 @@ export const SearchInterface = ({ onOccupationSelect }: SearchInterfaceProps) =>
     const sanitized = value.replace(/[^0-9\-\.]/g, '');
     setFilter(sanitized);
   };
+
+  // Show authentication prompt if not logged in
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <LoadingSpinner size="md" text="Loading..." />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6" aria-labelledby="career-search-heading">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2" id="career-search-heading">
+              Career Search
+            </h2>
+            <p className="text-gray-600 text-sm">
+              Search for occupations to analyze their automation potential using AI
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+            <LogIn className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              Sign In Required
+            </h3>
+            <p className="text-blue-700 mb-4">
+              Please sign in to search for occupations and analyze their automation potential.
+            </p>
+            <Button onClick={() => navigate('/auth')} className="bg-blue-600 hover:bg-blue-700">
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>
