@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,9 +152,10 @@ export default function SharedAnalysisPage() {
 
         {analysis?.analysis_data && (
           <OccupationAnalysis 
-            data={analysis.analysis_data}
-            title={analysis.occupation_title}
-            readOnly={true}
+            occupation={analysis.analysis_data}
+            overallAPO={analysis.analysis_data?.overallAPO ?? 0}
+            onAddToSelected={() => {}}
+            isAlreadySelected={true}
           />
         )}
       </div>

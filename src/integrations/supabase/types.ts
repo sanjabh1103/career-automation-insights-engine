@@ -595,6 +595,107 @@ export type Database = {
         }
         Relationships: []
       }
+      care_profiles: {
+        Row: {
+          birth_date: string | null
+          created_at: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          full_name: string
+          id: string
+          medical_conditions: string[] | null
+          medications: string[] | null
+          preferences: Json | null
+          preferred_name: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          full_name: string
+          id?: string
+          medical_conditions?: string[] | null
+          medications?: string[] | null
+          preferences?: Json | null
+          preferred_name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          full_name?: string
+          id?: string
+          medical_conditions?: string[] | null
+          medications?: string[] | null
+          preferences?: Json | null
+          preferred_name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           branding_color: string | null
@@ -774,6 +875,66 @@ export type Database = {
           },
         ]
       }
+      emergency_contacts: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          phone: string
+          relationship: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          phone: string
+          relationship: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          phone?: string
+          relationship?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      family_access: {
+        Row: {
+          access_level: string | null
+          created_at: string | null
+          family_member_email: string
+          id: string
+          is_active: boolean | null
+          senior_user_id: string | null
+        }
+        Insert: {
+          access_level?: string | null
+          created_at?: string | null
+          family_member_email: string
+          id?: string
+          is_active?: boolean | null
+          senior_user_id?: string | null
+        }
+        Update: {
+          access_level?: string | null
+          created_at?: string | null
+          family_member_email?: string
+          id?: string
+          is_active?: boolean | null
+          senior_user_id?: string | null
+        }
+        Relationships: []
+      }
       generated_websites: {
         Row: {
           about_section: Json
@@ -826,6 +987,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      health_checkins: {
+        Row: {
+          created_at: string | null
+          energy_level: number | null
+          id: string
+          mood_rating: number | null
+          notes: string | null
+          sleep_quality: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          energy_level?: number | null
+          id?: string
+          mood_rating?: number | null
+          notes?: string | null
+          sleep_quality?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          energy_level?: number | null
+          id?: string
+          mood_rating?: number | null
+          notes?: string | null
+          sleep_quality?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       job_matches: {
         Row: {
@@ -1195,6 +1386,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personal_reminders: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          reminder_days: number[] | null
+          reminder_time: string
+          reminder_type: string | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          reminder_days?: number[] | null
+          reminder_time: string
+          reminder_type?: string | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          reminder_days?: number[] | null
+          reminder_time?: string
+          reminder_type?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
