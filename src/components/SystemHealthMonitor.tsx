@@ -16,12 +16,14 @@ interface HealthStatus {
 }
 
 export function SystemHealthMonitor() {
-  const { data: healthStatus, isLoading, error, refetch } = useQuery<HealthStatus>({
+  const { data: healthStatus, isLoading, error, refetch } = useQuery({
     queryKey: ['system_health'],
-    queryFn: async () => {
+    queryFn: async (): Promise<HealthStatus> => {
       const { data, error } = await supabase.rpc('health_check');
       if (error) throw error;
-      return data;
+      
+      // Type assertion for the response data
+      return data as HealthStatus;
     },
     refetchInterval: 30000, // Check every 30 seconds
   });

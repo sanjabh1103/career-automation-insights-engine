@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
 
 interface Notification {
@@ -16,6 +16,7 @@ interface Notification {
   read: boolean;
   created_at: string;
   metadata?: any;
+  user_id: string;
 }
 
 export function NotificationSystem() {
@@ -74,9 +75,9 @@ export function NotificationSystem() {
     };
   }, [user, queryClient, toast]);
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+  const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Notification[]> => {
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -91,7 +92,16 @@ export function NotificationSystem() {
         throw error;
       }
       
-      return data || [];
+      return (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        message: item.message,
+        type: (item.type as 'info' | 'success' | 'warning' | 'error') || 'info',
+        read: item.read || false,
+        created_at: item.created_at || new Date().toISOString(),
+        metadata: item.metadata,
+        user_id: item.user_id || ''
+      }));
     },
     enabled: !!user,
   });

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { APIErrorHandler, withRetry } from "@/utils/apiErrorHandler";
 import { apoRateLimiter, checkRateLimit } from "@/utils/rateLimiting";
 
@@ -106,7 +106,7 @@ export function useAPOCalculation() {
           p_type: 'success'
         });
 
-        return cached.analysis_data as APOAnalysis;
+        return cached.analysis_data as unknown as APOAnalysis;
       }
 
       // Calculate new APO analysis with retry logic
