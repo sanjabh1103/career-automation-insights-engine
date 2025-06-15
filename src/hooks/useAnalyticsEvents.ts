@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@supabase/supabase-js";
 
 /**
  * Track an analytics event for the current user (basic interface).
@@ -8,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function trackAnalyticsEvent(payload: {
   event_name: string;
   event_category: string;
-  event_data?: object;
+  event_data?: Json;    // Use Json type explicitly!
   page_url?: string;
 }) {
   try {
@@ -23,6 +24,13 @@ export async function trackAnalyticsEvent(payload: {
       page_url: payload.page_url ?? window.location.pathname,
       user_agent: navigator.userAgent,
       // IP address is not collected from client for privacy, handled server-side if needed
+    } as {
+      user_id: string | undefined;
+      event_name: string;
+      event_category: string;
+      event_data: Json;
+      page_url: string;
+      user_agent: string;
     });
   } catch (error) {
     console.warn("Analytics event not tracked:", error);
