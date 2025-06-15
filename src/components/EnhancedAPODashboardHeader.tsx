@@ -22,8 +22,18 @@ interface EnhancedAPODashboardHeaderProps {
   onCreditsClick?: () => void;
 }
 
-export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: EnhancedAPODashboardHeaderProps) {
+export function EnhancedAPODashboardHeader({ userEmail }: EnhancedAPODashboardHeaderProps) {
   const navigate = useNavigate();
+
+  // Placeholder values for rate limiting
+  // In real code, you would fetch these from state or context.
+  const rateLimitDemoProps = {
+    remaining: 20,
+    total: 20,
+    resetTime: Date.now() + 60000,
+    timeUntilReset: 60000,
+    label: "API Usage"
+  };
 
   return (
     <Card className="border-0 rounded-none bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-xl">
@@ -63,10 +73,10 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
             {/* API Credits and Rate Limits */}
             <div className="flex items-center space-x-3">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
-                <APICreditsDisplay onClick={onCreditsClick} />
+                <APICreditsDisplay />
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
-                <RateLimitDisplay />
+                <RateLimitDisplay {...rateLimitDemoProps} />
               </div>
             </div>
 
