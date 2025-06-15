@@ -1,263 +1,447 @@
 
-# APO Dashboard - AI-Powered Career Automation Analysis
+# 🚀 APO Dashboard - AI-Powered Career Automation Analysis
 
 ![APO Dashboard](https://img.shields.io/badge/Status-Production%20Ready-green)
 ![React](https://img.shields.io/badge/React-18.3.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-green)
+![Tailwind](https://img.shields.io/badge/Tailwind%20CSS-3.0-blue)
 
-## 🚀 Overview
+## 📋 Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Database Schema](#database-schema)
+- [API Integrations](#api-integrations)
+- [Deployment](#deployment)
+- [Development](#development)
+- [Contributing](#contributing)
 
-The **APO Dashboard** (Automation Potential Overview) is an advanced AI-powered web application that analyzes career automation potential using real-time data from the O*NET database. It helps professionals, career counselors, and researchers understand how AI and automation might impact different occupations over time.
+## 🎯 Overview
 
-## ✨ Key Features
+**APO Dashboard** (Automation Potential Overview) is a cutting-edge web application that leverages AI to analyze career automation potential. Built with React, TypeScript, and Supabase, it provides professionals, researchers, and career counselors with data-driven insights about how AI and automation might impact different occupations.
 
-### 🔍 **Intelligent Career Search**
-- **Real-time O*NET Integration**: Search through 1000+ occupations from the official O*NET database
-- **AI-Powered Analysis**: Advanced automation potential calculations using Google's Gemini AI
-- **Smart Filtering**: Filter by occupation codes, keywords, and categories
-- **Input Sanitization**: Enterprise-grade security with XSS protection
+### 🔑 Key Value Propositions
+- **AI-Powered Analysis**: Advanced automation scoring using Google's Gemini AI
+- **Real-time Data**: Live integration with O*NET occupation database
+- **Comprehensive Insights**: Multi-dimensional analysis across skills, tasks, and abilities
+- **Professional Reports**: Export-ready CSV and PDF documentation
+- **Collaborative Features**: Share analyses with teams and clients
 
-### 📊 **Comprehensive Analysis**
-- **Detailed APO Scoring**: Multi-dimensional automation analysis across:
-  - Tasks and Work Activities
+## ✨ Features
+
+### 🔍 **Core Analysis Engine**
+- **Intelligent Career Search**: Real-time search through 1000+ O*NET occupations
+- **Multi-Factor APO Scoring**: Analysis across:
+  - Work Tasks & Activities
   - Required Knowledge Areas
-  - Essential Skills
-  - Core Abilities
+  - Essential Skills & Abilities
   - Technology Requirements
-- **Confidence Metrics**: AI-generated confidence levels for predictions
-- **Timeline Forecasting**: Estimated automation timelines (2-15+ years)
-- **Risk Assessment**: Color-coded risk levels (Low, Medium, Med-High, High)
+- **Confidence Metrics**: AI-generated reliability scores
+- **Timeline Forecasting**: Automation timeline predictions (2-15+ years)
+- **Risk Classification**: Color-coded automation risk levels
 
-### 📈 **Advanced Visualizations**
-- **Interactive Charts**: Dynamic visualizations using Recharts
-- **Category Breakdowns**: Detailed analysis by skill/knowledge categories
-- **Comparison Views**: Side-by-side occupation comparisons
+### 📊 **Advanced Visualizations**
+- **Interactive Charts**: Dynamic data visualization with Recharts
+- **Category Breakdowns**: Detailed skill/knowledge analysis
+- **Comparison Tools**: Side-by-side occupation comparisons
 - **Trend Analysis**: Historical and projected automation trends
 
+### 👤 **User Management & Personalization**
+- **Secure Authentication**: Supabase Auth with email/password
+- **Personal Dashboard**: Comprehensive user management interface
+- **Profile Management**: Customizable user profiles and preferences
+- **Usage Analytics**: Personal usage statistics and insights
+
 ### 💾 **Data Management**
-- **Secure Storage**: User-specific data with Row Level Security (RLS)
+- **Persistent Storage**: User-specific data with Row Level Security
+- **Smart Caching**: Optimized API response caching
 - **Export Capabilities**: 
   - **CSV Export**: Excel/Google Sheets compatible
-  - **PDF Reports**: Professional formatted reports with insights
-- **Save & Load**: Persistent analysis collections
-- **Search History**: Track and revisit previous searches
+  - **PDF Reports**: Professional formatted documentation
+- **Collection Management**: Save, organize, and tag analyses
+
+### 🤝 **Collaboration & Sharing**
+- **Share by Link**: Generate shareable URLs for analyses
+- **Email Sharing**: Direct email sharing with access controls
+- **Token-based Access**: Secure sharing with expiration controls
+- **View Tracking**: Monitor share engagement and access
+
+### 🔔 **Communication System**
+- **Real-time Notifications**: Instant system and analysis updates
+- **User Feedback System**: Bug reports, feature requests, and support
+- **Notification Preferences**: Customizable alert settings
+- **Analytics Tracking**: User engagement and system metrics
 
 ### 🎯 **Job Market Intelligence**
-- **Real-time Job Data**: Integration with SerpAPI for current job postings
-- **Market Trends**: Salary ranges, location data, and demand metrics
-- **Career Insights**: AI-generated opportunities and challenges
-
-### 👤 **User Experience**
-- **Secure Authentication**: Email/password with Supabase Auth
-- **Personal Dashboard**: Manage profiles, settings, and saved data
-- **Responsive Design**: Optimized for desktop, tablet, and mobile
-- **Accessibility**: WCAG compliant with screen reader support
-- **Guided Onboarding**: Interactive tour for new users
-
-## 🛠️ Technology Stack
-
-- **Frontend**: React 18, TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui, Radix UI primitives
-- **State Management**: TanStack Query for server state
-- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **AI Integration**: Google Gemini API for analysis
-- **Data Sources**: O*NET Web Services, SerpAPI
-- **Charts**: Recharts for data visualization
-- **Build Tool**: Vite for fast development and building
+- **Live Job Data**: Integration with SerpAPI for current postings
+- **Market Analysis**: Salary ranges and demand metrics
+- **Geographic Distribution**: Location-based opportunity mapping
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+- **Node.js** 18+ and npm
+- **Supabase Account** (free tier available)
+- **API Keys** for external services
 
-- Node.js 18+ and npm
-- Supabase account
-- API keys for O*NET, Google AI, and SerpAPI
-
-### Installation
-
-1. **Clone the repository**
+### 1. Clone & Install
 ```bash
-git clone <your-repo-url>
+git clone <repository-url>
 cd apo-dashboard
-```
-
-2. **Install dependencies**
-```bash
 npm install
 ```
 
-3. **Environment Setup**
-Create a `.env.local` file with your API keys:
+### 2. Environment Setup
+Create `.env.local` with your configuration:
 ```env
-VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-4. **Database Setup**
-The application requires several Supabase tables. Run the provided SQL migrations:
-- User profiles and settings
-- Search history tracking
-- Saved analyses storage
-- User credits system
-
-5. **Configure Supabase Secrets**
-Add these secrets in your Supabase dashboard:
+### 3. Supabase Configuration
+Configure these secrets in your Supabase dashboard:
 - `ONET_API_KEY`: O*NET Web Services API key
-- `GOOGLE_AI_API_KEY`: Google AI/Gemini API key
+- `GOOGLE_AI_API_KEY`: Google AI/Gemini API key  
 - `SERPAPI_KEY`: SerpAPI key for job market data
 
-6. **Start Development Server**
+### 4. Database Setup
+The application includes comprehensive SQL migrations in `supabase/migrations/`. Key tables:
+- User management and authentication
+- Analysis storage and caching
+- Notification and feedback systems
+- Analytics and engagement tracking
+
+### 5. Start Development
 ```bash
 npm run dev
 ```
-
-7. **Open your browser**
-Navigate to `http://localhost:5173`
-
-## 📖 User Guide
-
-### Getting Started
-
-1. **Sign Up/Login**: Create an account or sign in to access personalized features
-2. **Take the Tour**: New users get an interactive onboarding experience
-3. **Search Careers**: Use the search interface to find occupations
-4. **Analyze APO**: Click on any occupation to get detailed automation analysis
-5. **Save & Export**: Build collections and export your findings
-
-### Core Workflows
-
-#### **Analyzing a Single Career**
-1. Enter occupation name or keywords in the search box
-2. Browse results and click on an occupation
-3. Review the comprehensive APO analysis:
-   - Overall automation score
-   - Category-specific breakdowns
-   - Timeline predictions
-   - AI-generated insights
-4. Add to your selected careers collection
-
-#### **Comparing Multiple Careers**
-1. Select multiple occupations to your collection
-2. Use the comparison panel to see side-by-side analysis
-3. Export comparisons as CSV or PDF reports
-
-#### **Market Research**
-1. View job market data for any analyzed occupation
-2. See current salary ranges and job availability
-3. Understand geographic distribution of opportunities
-
-### Advanced Features
-
-- **Export Options**: Choose between CSV (data analysis) or PDF (presentation)
-- **Search History**: Revisit previous searches and their results
-- **Profile Management**: Update personal information and preferences
-- **Settings**: Customize default export formats and notifications
-
-## 🔒 Security & Privacy
-
-- **Data Encryption**: All data transmitted over HTTPS
-- **Input Sanitization**: Protection against XSS and injection attacks
-- **User Isolation**: Row Level Security ensures users only see their own data
-- **Secure Authentication**: Industry-standard auth with Supabase
-- **API Security**: Rate limiting and proper error handling
-- **Privacy First**: No unnecessary data collection or tracking
+Open `http://localhost:5173` to access the application.
 
 ## 🏗️ Architecture
 
-### Frontend Architecture
-- **Component-based**: Modular React components with TypeScript
-- **Error Boundaries**: Comprehensive error handling and recovery
-- **State Management**: Server state with TanStack Query, local state with React hooks
-- **Accessibility**: ARIA labels, keyboard navigation, screen reader support
+### Frontend Stack
+- **React 18**: Modern component-based UI framework
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **shadcn/ui**: High-quality component library
+- **TanStack Query**: Server state management
+- **React Router**: Client-side routing
+- **Recharts**: Data visualization
 
-### Backend Architecture
-- **Serverless Functions**: Supabase Edge Functions for API integrations
-- **Database**: PostgreSQL with Row Level Security
-- **Real-time**: Optional real-time subscriptions for collaborative features
-- **File Storage**: Supabase Storage for user uploads (if needed)
+### Backend Infrastructure
+- **Supabase**: 
+  - PostgreSQL database with Row Level Security
+  - Authentication and user management
+  - Edge Functions for serverless API integration
+  - Real-time subscriptions
+- **External APIs**:
+  - O*NET Web Services for occupation data
+  - Google Gemini AI for automation analysis
+  - SerpAPI for job market insights
 
-### Data Flow
-1. User searches → Frontend validates and sanitizes input
-2. Search request → Supabase Edge Function → O*NET API
-3. APO calculation → Edge Function → Google AI API
-4. Results stored → PostgreSQL with user association
-5. Job market data → SerpAPI integration
-6. Export generation → Client-side or server-side processing
+### Security Features
+- **Input Sanitization**: XSS and injection protection
+- **Row Level Security**: Database-level access controls
+- **API Rate Limiting**: Prevents abuse and ensures fair usage
+- **Secure Headers**: Comprehensive security middleware
+- **Data Encryption**: HTTPS everywhere with encrypted storage
+
+## 🗄️ Database Schema
+
+### Core Tables
+
+#### **Profiles**
+```sql
+profiles (
+  id UUID PRIMARY KEY,
+  email TEXT,
+  full_name TEXT,
+  avatar_url TEXT,
+  api_credits INTEGER DEFAULT 10,
+  subscription_tier TEXT DEFAULT 'free',
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+```
+
+#### **Saved Analyses**
+```sql
+saved_analyses (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  occupation_code TEXT NOT NULL,
+  occupation_title TEXT NOT NULL,
+  analysis_data JSONB NOT NULL,
+  tags TEXT[],
+  notes TEXT,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+```
+
+#### **Shared Analyses**
+```sql
+shared_analyses (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  analysis_id UUID REFERENCES saved_analyses(id),
+  share_token TEXT UNIQUE,
+  share_type TEXT DEFAULT 'link',
+  expires_at TIMESTAMP,
+  view_count INTEGER DEFAULT 0,
+  max_views INTEGER,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP
+)
+```
+
+#### **User Feedback**
+```sql
+user_feedback (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  feedback_type TEXT CHECK (feedback_type IN ('bug_report', 'feature_request', 'general', 'support')),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  priority TEXT DEFAULT 'medium',
+  status TEXT DEFAULT 'open',
+  category TEXT,
+  browser_info JSONB,
+  attachments TEXT[],
+  created_at TIMESTAMP
+)
+```
+
+#### **Notifications**
+```sql
+notifications (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT DEFAULT 'info',
+  read BOOLEAN DEFAULT false,
+  metadata JSONB,
+  created_at TIMESTAMP
+)
+```
+
+#### **Analytics Events**
+```sql
+analytics_events (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id),
+  event_name TEXT NOT NULL,
+  event_category TEXT NOT NULL,
+  event_data JSONB DEFAULT '{}',
+  page_url TEXT,
+  user_agent TEXT,
+  ip_address INET,
+  created_at TIMESTAMP
+)
+```
+
+### Supporting Tables
+- **search_history**: User search tracking
+- **notification_preferences**: User notification settings
+- **user_engagement_metrics**: Daily engagement analytics
+- **apo_analysis_cache**: Performance optimization cache
+
+### Row Level Security (RLS)
+All user data tables implement RLS policies ensuring:
+- Users can only access their own data
+- Secure sharing through controlled access patterns
+- Admin functions for system management
+- Public read access for shared content only
+
+## 🔌 API Integrations
+
+### O*NET Web Services
+- **Purpose**: Official occupation data and classifications
+- **Usage**: Career search and baseline occupation information
+- **Rate Limits**: Managed through caching and optimization
+
+### Google Gemini AI
+- **Purpose**: Advanced automation potential analysis
+- **Features**: 
+  - Natural language processing of occupation data
+  - Multi-factor automation scoring
+  - Confidence level generation
+  - Timeline estimation
+
+### SerpAPI
+- **Purpose**: Real-time job market data
+- **Features**:
+  - Current job postings and trends
+  - Salary information and geographic distribution
+  - Market demand indicators
+
+## 🚀 Deployment
+
+### Production Checklist
+- [ ] Environment variables configured
+- [ ] Supabase secrets added
+- [ ] Database migrations applied
+- [ ] SSL certificates verified
+- [ ] Performance monitoring enabled
+
+### Recommended Hosting
+- **Frontend**: Vercel, Netlify, or similar
+- **Backend**: Supabase (managed)
+- **Domain**: Custom domain with SSL
+
+### Environment Variables
+```env
+# Production
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_production_anon_key
+
+# Supabase Secrets (Dashboard)
+ONET_API_KEY=your_onet_api_key
+GOOGLE_AI_API_KEY=your_google_ai_key
+SERPAPI_KEY=your_serpapi_key
+```
+
+## 🛠️ Development
+
+### File Structure
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # shadcn/ui components
+│   ├── APODashboard.tsx # Main dashboard
+│   ├── UserDashboard.tsx # User management
+│   └── ...
+├── hooks/              # Custom React hooks
+│   ├── useSession.ts   # Authentication
+│   ├── useUserFeedback.ts # Feedback system
+│   └── ...
+├── pages/              # Route components
+├── utils/              # Utility functions
+└── integrations/       # External service clients
+    └── supabase/       # Supabase configuration
+```
+
+### Key Development Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run type-check   # TypeScript validation
+```
+
+### Code Quality
+- **TypeScript**: Strict type checking enabled
+- **ESLint**: Code quality enforcement
+- **Prettier**: Consistent code formatting
+- **Component Documentation**: Comprehensive inline docs
+
+### Testing Strategy
+- **Unit Tests**: Critical utility functions
+- **Integration Tests**: API endpoints and database operations
+- **E2E Tests**: Core user workflows
+- **Performance Tests**: Load testing for scalability
 
 ## 🎯 Use Cases
 
 ### **Career Counselors**
-- Provide data-driven career guidance
-- Help clients understand automation risks
-- Create professional reports for consultations
+- Generate professional automation risk assessments
+- Create comprehensive career guidance reports
+- Compare multiple career paths for clients
+- Track client consultation history
 
-### **HR Professionals**
-- Assess workforce automation impact
-- Plan reskilling and upskilling programs
-- Make strategic hiring decisions
+### **HR Professionals & Workforce Planners**
+- Assess organizational automation impact
+- Plan strategic reskilling initiatives
+- Make data-driven hiring decisions
+- Develop future-ready workforce strategies
 
-### **Job Seekers**
-- Understand career longevity prospects
+### **Job Seekers & Career Changers**
+- Understand long-term career viability
 - Identify automation-resistant skills to develop
 - Make informed career transition decisions
+- Plan professional development investments
 
 ### **Researchers & Analysts**
 - Study automation trends across industries
 - Generate reports on labor market evolution
 - Compare automation potential across occupations
+- Access historical trend data
 
 ### **Educational Institutions**
-- Guide curriculum development
-- Help students choose future-ready careers
+- Guide curriculum development for future relevance
+- Help students choose sustainable career paths
 - Research workforce development needs
-
-## 🔧 API Integrations
-
-- **O*NET Web Services**: Official occupation data and classifications
-- **Google Gemini AI**: Advanced natural language processing for analysis
-- **SerpAPI**: Real-time job market and salary data
-- **Supabase**: Authentication, database, and serverless functions
-
-## 📊 Performance
-
-- **Fast Loading**: Optimized bundle with code splitting
-- **Caching**: Intelligent caching of API responses
-- **Responsive**: Smooth performance across all device sizes
-- **Scalable**: Designed to handle growing user bases
+- Plan educational program investments
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our contributing guidelines for:
-- Code style and standards
-- Testing requirements
-- Pull request process
-- Issue reporting
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Implement changes with tests
+4. Submit pull request with detailed description
+5. Code review and merge
+
+### Contribution Guidelines
+- Follow TypeScript best practices
+- Maintain test coverage above 80%
+- Document all new features
+- Follow conventional commit messages
+- Ensure responsive design compliance
+
+### Issue Reporting
+- Use provided issue templates
+- Include reproduction steps
+- Provide browser/environment details
+- Tag with appropriate labels
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file for details.
 
 ## 🆘 Support
 
-For support, please:
-1. Check the documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-4. Contact support via email
+### Documentation
+- **User Guide**: Comprehensive usage documentation
+- **API Documentation**: Developer integration guides
+- **Video Tutorials**: Step-by-step walkthroughs
 
-## 🗺️ Roadmap
+### Community Support
+- **GitHub Issues**: Bug reports and feature requests
+- **Discussions**: Community Q&A and best practices
+- **Discord**: Real-time community support
 
-### Upcoming Features
-- **Industry Analysis**: Sector-wide automation trends
-- **Skills Gap Analysis**: Identify skill development opportunities
-- **Collaborative Workspaces**: Team-based analysis and sharing
-- **API Access**: Developer API for integrations
-- **Mobile App**: Native mobile applications
-- **Advanced AI**: Enhanced prediction models
+### Professional Support
+- **Email**: support@apodashboard.com
+- **Enterprise**: Custom implementations and integrations
+- **Training**: Team onboarding and best practices
 
 ---
 
-**Built with ❤️ for the future of work**
+**🌟 APO Dashboard - Empowering informed career decisions in the age of AI**
+
+*Built with ❤️ for the future of work*
+
+---
+
+## 🗺️ Roadmap
+
+### Version 2.0 (Coming Soon)
+- **Industry Analysis**: Sector-wide automation trends
+- **Skills Gap Analysis**: Personalized skill development recommendations
+- **Collaborative Workspaces**: Team-based analysis and sharing
+- **Mobile App**: Native iOS and Android applications
+
+### Version 3.0 (Future)
+- **API Access**: Developer API for third-party integrations
+- **Advanced AI Models**: Enhanced prediction accuracy
+- **Real-time Collaboration**: Live document editing and sharing
+- **Enterprise Features**: White-label solutions and custom integrations
+
+---
 
 *Last updated: December 2024*
+*Documentation Version: 2.0*
