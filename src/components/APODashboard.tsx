@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { OccupationAnalysis } from './OccupationAnalysis';
@@ -8,12 +9,11 @@ import { Card } from '@/components/ui/card';
 import { SavedSelectionsPanel } from "./SavedSelectionsPanel";
 import { useSavedSelections } from "@/hooks/useSavedSelections";
 import { JobMarketPanel } from './JobMarketPanel';
-
 import { APODashboardHeader } from "./APODashboardHeader";
 import { ExportCareersModal } from "./ExportCareersModal";
 import { SelectedCareersPanel } from "./SelectedCareersPanel";
-import { exportToCSV } from "@/utils/exportToCSV";
 import { OnboardingTour } from "./OnboardingTour";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 export interface SelectedOccupation {
   code: string;
@@ -52,7 +52,6 @@ export const APODashboard = () => {
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
   const [showExport, setShowExport] = useState(false);
 
-  // Load/Save support using local storage
   const savedSelections = useSavedSelections<SelectedOccupation[]>();
 
   const handleOccupationSelect = (occupation: any) => {
@@ -90,70 +89,88 @@ export const APODashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Onboarding Tour - shown only if not completed */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <OnboardingTour />
-      </div>
-      {/* Header */}
-      <APODashboardHeader
-        selectedJobsCount={selectedJobs.length}
-        onExport={() => setShowExport(true)}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <StatsOverview selectedJobsCount={selectedJobs.length} />
-
-        <SavedSelectionsPanel
-          selections={selectedJobs}
-          onLoad={handleLoadSelection}
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <OnboardingTour />
+        </div>
+        
+        <APODashboardHeader
+          selectedJobsCount={selectedJobs.length}
+          onExport={() => setShowExport(true)}
         />
 
-        {selectedJobs.length > 1 && (
-          <OccupationComparisonPanel
-            occupations={selectedJobs}
-            onRemove={handleRemoveSelected}
-          />
-        )}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorBoundary>
+            <StatsOverview selectedJobsCount={selectedJobs.length} />
+          </ErrorBoundary>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="p-6">
-              <SearchInterface onOccupationSelect={handleOccupationSelect} />
-            </Card>
+          <ErrorBoundary>
+            <SavedSelectionsPanel
+              selections={selectedJobs}
+              onLoad={handleLoadSelection}
+            />
+          </ErrorBoundary>
 
-            {selectedOccupation && (
-              <OccupationAnalysis
-                occupation={selectedOccupation}
-                overallAPO={calculateOverallAPO(selectedOccupation)}
-                onAddToSelected={handleAddToSelected}
-                isAlreadySelected={selectedJobs.some(job => job.code === selectedOccupation.code)}
+          {selectedJobs.length > 1 && (
+            <ErrorBoundary>
+              <OccupationComparisonPanel
+                occupations={selectedJobs}
+                onRemove={handleRemoveSelected}
               />
-            )}
-          </div>
+            </ErrorBoundary>
+          )}
 
-          <div className="space-y-6">
-            <TopCareersPanel />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="p-6">
+                <ErrorBoundary>
+                  <SearchInterface onOccupationSelect={handleOccupationSelect} />
+                </ErrorBoundary>
+              </Card>
 
-            {selectedOccupation && (
-              <JobMarketPanel jobTitle={selectedOccupation.title} />
-            )}
+              {selectedOccupation && (
+                <ErrorBoundary>
+                  <OccupationAnalysis
+                    occupation={selectedOccupation}
+                    overallAPO={calculateOverallAPO(selectedOccupation)}
+                    onAddToSelected={handleAddToSelected}
+                    isAlreadySelected={selectedJobs.some(job => job.code === selectedOccupation.code)}
+                  />
+                </ErrorBoundary>
+              )}
+            </div>
 
-            {selectedJobs.length > 0 && (
-              <SelectedCareersPanel
-                selectedJobs={selectedJobs}
-                calculateOverallAPO={calculateOverallAPO}
-                handleRemoveSelected={handleRemoveSelected}
-              />
-            )}
+            <div className="space-y-6">
+              <ErrorBoundary>
+                <TopCareersPanel />
+              </ErrorBoundary>
+
+              {selectedOccupation && (
+                <ErrorBoundary>
+                  <JobMarketPanel jobTitle={selectedOccupation.title} />
+                </ErrorBoundary>
+              )}
+
+              {selectedJobs.length > 0 && (
+                <ErrorBoundary>
+                  <SelectedCareersPanel
+                    selectedJobs={selectedJobs}
+                    calculateOverallAPO={calculateOverallAPO}
+                    handleRemoveSelected={handleRemoveSelected}
+                  />
+                </ErrorBoundary>
+              )}
+            </div>
           </div>
         </div>
+        
+        <ExportCareersModal
+          open={showExport}
+          onClose={() => setShowExport(false)}
+          selectedJobs={selectedJobs}
+        />
       </div>
-      <ExportCareersModal
-        open={showExport}
-        onClose={() => setShowExport(false)}
-        onExport={() => exportToCSV(selectedJobs)}
-      />
-    </div>
+    </ErrorBoundary>
   );
 };
