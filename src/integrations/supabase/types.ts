@@ -703,6 +703,53 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          chunk_count: number
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          processing_status: string
+          project_id: string
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_count?: number
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          processing_status?: string
+          project_id: string
+          storage_path: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_count?: number
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          processing_status?: string
+          project_id?: string
+          storage_path?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_websites: {
         Row: {
           about_section: Json
@@ -1122,6 +1169,72 @@ export type Database = {
           id?: string
           subscription_tier?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      progress_sessions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          hints_used: number
+          id: string
+          problem_text: string
+          subject: string
+          time_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_text: string
+          subject: string
+          time_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          hints_used?: number
+          id?: string
+          problem_text?: string
+          subject?: string
+          time_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1594,6 +1707,39 @@ export type Database = {
           subscription_tier?: string | null
           total_spent?: number | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

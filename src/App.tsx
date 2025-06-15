@@ -12,9 +12,27 @@ import { useSession } from "@/hooks/useSession";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
+import { SecurityHeaders } from "@/components/SecurityHeaders";
+import { AccessibilityProvider } from "@/components/AccessibilityProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { APICreditsDisplay } from "@/components/APICreditsDisplay";
 import React from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx errors
+        if (error?.status >= 400 && error?.status < 500) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    },
+  },
+});
 
 const AppRoutes = () => {
   const { user, loading } = useSession();
@@ -22,7 +40,8 @@ const AppRoutes = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <span>Loading...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading...</span>
       </div>
     );
   }
@@ -52,8 +71,11 @@ const AppRoutes = () => {
           user ? (
             <>
               {/* Top navigation bar */}
-              <div className="w-full flex justify-between items-center p-4 pr-8 bg-white border-b">
-                <h1 className="text-lg font-semibold text-gray-800">APO Dashboard</h1>
+              <div className="w-full flex justify-between items-center p-4 pr-8 bg-white border-b shadow-sm">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-lg font-semibold text-gray-800">APO Dashboard</h1>
+                  <APICreditsDisplay />
+                </div>
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="outline" 
@@ -81,15 +103,20 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AccessibilityProvider>
+        <TooltipProvider>
+          <SecurityHeaders />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AccessibilityProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
