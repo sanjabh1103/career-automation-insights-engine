@@ -5,31 +5,46 @@ import { EnhancedAPODashboardHeader } from '@/components/EnhancedAPODashboardHea
 import { useSession } from '@/hooks/useSession';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { motion } from 'framer-motion';
 
 const Index = () => {
   const { user, loading } = useSession();
   const navigate = useNavigate();
   const [showCreditsModal, setShowCreditsModal] = useState(false);
 
-  // Don't redirect to auth page automatically, let users browse the dashboard
-  // They'll be prompted to sign in when they try to use features that require auth
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading application..." />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <LoadingSpinner size="lg" text="Loading application..." />
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       <EnhancedAPODashboardHeader 
         userEmail={user?.email}
         onCreditsClick={() => setShowCreditsModal(true)}
       />
-      <APODashboard />
-    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        <APODashboard />
+      </motion.div>
+    </motion.div>
   );
 };
 

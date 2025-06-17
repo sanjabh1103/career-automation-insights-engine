@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { OccupationAnalysis } from './OccupationAnalysis';
@@ -14,6 +13,7 @@ import { ExportCareersModal } from "./ExportCareersModal";
 import { SelectedCareersPanel } from "./SelectedCareersPanel";
 import { OnboardingTour } from "./OnboardingTour";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { motion } from 'framer-motion';
 
 export interface SelectedOccupation {
   code: string;
@@ -88,10 +88,30 @@ export const APODashboard = () => {
     return (taskAPO + knowledgeAPO + skillsAPO + abilitiesAPO + techAPO) / 5;
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5 }
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-4 sm:pt-6 lg:pt-8">
           <OnboardingTour />
         </div>
         
@@ -100,70 +120,109 @@ export const APODashboard = () => {
           onExport={() => setShowExport(true)}
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div 
+          className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           <ErrorBoundary>
-            <StatsOverview selectedJobsCount={selectedJobs.length} />
+            <motion.div variants={sectionVariants}>
+              <StatsOverview selectedJobsCount={selectedJobs.length} />
+            </motion.div>
           </ErrorBoundary>
 
           <ErrorBoundary>
-            <SavedSelectionsPanel
-              selections={selectedJobs}
-              onLoad={handleLoadSelection}
-            />
+            <motion.div variants={sectionVariants}>
+              <SavedSelectionsPanel
+                selections={selectedJobs}
+                onLoad={handleLoadSelection}
+              />
+            </motion.div>
           </ErrorBoundary>
 
           {selectedJobs.length > 1 && (
             <ErrorBoundary>
-              <OccupationComparisonPanel
-                occupations={selectedJobs}
-                onRemove={handleRemoveSelected}
-              />
+              <motion.div 
+                variants={sectionVariants}
+                className="mb-6 sm:mb-8"
+              >
+                <OccupationComparisonPanel
+                  occupations={selectedJobs}
+                  onRemove={handleRemoveSelected}
+                />
+              </motion.div>
             </ErrorBoundary>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="p-6">
-                <ErrorBoundary>
-                  <SearchInterface onOccupationSelect={handleOccupationSelect} />
-                </ErrorBoundary>
-              </Card>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-6 sm:mt-8">
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+              <motion.div variants={sectionVariants}>
+                <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                  <ErrorBoundary>
+                    <SearchInterface onOccupationSelect={handleOccupationSelect} />
+                  </ErrorBoundary>
+                </Card>
+              </motion.div>
 
               {selectedOccupation && (
-                <ErrorBoundary>
-                  <OccupationAnalysis
-                    occupation={selectedOccupation}
-                    overallAPO={calculateOverallAPO(selectedOccupation)}
-                    onAddToSelected={handleAddToSelected}
-                    isAlreadySelected={selectedJobs.some(job => job.code === selectedOccupation.code)}
-                  />
-                </ErrorBoundary>
+                <motion.div 
+                  variants={sectionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  <ErrorBoundary>
+                    <OccupationAnalysis
+                      occupation={selectedOccupation}
+                      overallAPO={calculateOverallAPO(selectedOccupation)}
+                      onAddToSelected={handleAddToSelected}
+                      isAlreadySelected={selectedJobs.some(job => job.code === selectedOccupation.code)}
+                    />
+                  </ErrorBoundary>
+                </motion.div>
               )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <ErrorBoundary>
-                <TopCareersPanel />
+                <motion.div variants={sectionVariants}>
+                  <TopCareersPanel />
+                </motion.div>
               </ErrorBoundary>
 
               {selectedOccupation && (
                 <ErrorBoundary>
-                  <JobMarketPanel jobTitle={selectedOccupation.title} />
+                  <motion.div 
+                    variants={sectionVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
+                    <JobMarketPanel jobTitle={selectedOccupation.title} />
+                  </motion.div>
                 </ErrorBoundary>
               )}
 
               {selectedJobs.length > 0 && (
                 <ErrorBoundary>
-                  <SelectedCareersPanel
-                    selectedJobs={selectedJobs}
-                    calculateOverallAPO={calculateOverallAPO}
-                    handleRemoveSelected={handleRemoveSelected}
-                  />
+                  <motion.div 
+                    variants={sectionVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
+                    <SelectedCareersPanel
+                      selectedJobs={selectedJobs}
+                      calculateOverallAPO={calculateOverallAPO}
+                      handleRemoveSelected={handleRemoveSelected}
+                    />
+                  </motion.div>
                 </ErrorBoundary>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
         
         <ExportCareersModal
           open={showExport}
