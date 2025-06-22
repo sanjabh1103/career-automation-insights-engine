@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Notebook as Robot, Brain, User, Zap, BookOpen, Lightbulb, AlertTriangle, CheckCircle, Clock, Save, RefreshCw } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Notebook as Robot, Brain, User, Zap, BookOpen, Lightbulb, AlertTriangle, CheckCircle, Clock, Save, RefreshCw, Briefcase, GraduationCap, ThumbsUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useSession } from '@/hooks/useSession';
 
 // Types
 interface Occupation {
@@ -26,11 +28,13 @@ interface Task {
   category: 'Automate' | 'Augment' | 'Human-only';
   explanation?: string;
   confidence?: number;
+  isCustom?: boolean;
 }
 
 interface Skill {
   name: string;
   explanation: string;
+  inProgress?: boolean;
 }
 
 interface Resource {
@@ -38,16 +42,26 @@ interface Resource {
   url: string;
   provider: string;
   skillArea: string;
+  costType?: string;
 }
 
 interface UserPreferences {
   occupation?: Occupation;
   recentTasks?: Task[];
+  skillProgress?: Record<string, boolean>;
+  lastVisited?: string;
+}
+
+interface FeedbackData {
+  taskId: string;
+  isAccurate: boolean;
+  comment?: string;
 }
 
 // Main component
 export function AIImpactPlanner() {
   // State
+  const { user } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
   const [occupations, setOccupations] = useState<Occupation[]>([]);
   const [selectedOccupation, setSelectedOccupation] = useState<Occupation | null>(null);
@@ -59,6 +73,12 @@ export function AIImpactPlanner() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('tasks');
+  const [similarOccupations, setSimilarOccupations] = useState<Occupation[]>([]);
+  const [customJobTitle, setCustomJobTitle] = useState('');
+  const [isSearchingCustomJob, setIsSearchingCustomJob] = useState(false);
+  const [skillProgress, setSkillProgress] = useState<Record<string, boolean>>({});
+  const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
+  const [confidenceFilter, setConfidenceFilter] = useState(0);
 
   // Load user preferences from localStorage on component mount
   useEffect(() => {
@@ -68,6 +88,9 @@ export function AIImpactPlanner() {
         const preferences: UserPreferences = JSON.parse(savedPreferences);
         if (preferences.occupation) {
           setSelectedOccupation(preferences.occupation);
+        }
+        if (preferences.skillProgress) {
+          setSkillProgress(preferences.skillProgress);
         }
       } catch (error) {
         console.error('Error loading saved preferences:', error);
@@ -80,11 +103,13 @@ export function AIImpactPlanner() {
     if (selectedOccupation) {
       const preferences: UserPreferences = {
         occupation: selectedOccupation,
-        recentTasks: tasks.slice(0, 5)
+        recentTasks: tasks.slice(0, 5),
+        skillProgress,
+        lastVisited: new Date().toISOString()
       };
       localStorage.setItem('aiImpactPlanner', JSON.stringify(preferences));
     }
-  }, [selectedOccupation, tasks]);
+  }, [selectedOccupation, tasks, skillProgress]);
 
   // Load tasks when occupation is selected
   useEffect(() => {
@@ -131,6 +156,54 @@ export function AIImpactPlanner() {
       toast.error('Failed to search occupations');
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Find similar occupations for custom job title
+  const findSimilarOccupations = async (jobTitle: string) => {
+    if (!jobTitle.trim()) {
+      toast.error('Please enter a job title');
+      return;
+    }
+
+    setIsSearchingCustomJob(true);
+    try {
+      // In a real implementation, this would call the Gemini API
+      // For now, we'll simulate a response with a search
+      
+      const { data, error } = await supabase.functions.invoke('onet-proxy', {
+        body: { onetPath: `search?keyword=${encodeURIComponent(jobTitle)}&end=5` },
+      });
+
+      if (error) throw new Error(`Search failed: ${error.message}`);
+      
+      let occs: Occupation[] = [];
+      if (data.occupation) {
+        occs = Array.isArray(data.occupation) 
+          ? data.occupation.map((o: any) => ({ 
+              code: o.code, 
+              title: o.title,
+              description: o.description || `An occupation from the O*NET database.`
+            }))
+          : [{ 
+              code: data.occupation.code, 
+              title: data.occupation.title,
+              description: data.occupation.description || `An occupation from the O*NET database.`
+            }];
+      }
+      
+      setSimilarOccupations(occs);
+      
+      if (occs.length === 0) {
+        toast.error('No similar occupations found. Try a different job title.');
+      } else {
+        toast.success(`Found ${occs.length} similar occupations`);
+      }
+    } catch (error) {
+      console.error('Error finding similar occupations:', error);
+      toast.error('Failed to find similar occupations');
+    } finally {
+      setIsSearchingCustomJob(false);
     }
   };
 
@@ -208,7 +281,7 @@ export function AIImpactPlanner() {
 
     setIsAssessingTask(true);
     try {
-      // In a real implementation, this would call the Gemini API
+      // In a production environment, this would call the Supabase Edge Function
       // For now, we'll simulate a response
       
       // Simulate API call delay
@@ -242,7 +315,8 @@ export function AIImpactPlanner() {
         description: customTask,
         category,
         explanation,
-        confidence
+        confidence,
+        isCustom: true
       };
       
       setTasks([newTask, ...tasks]);
@@ -284,7 +358,13 @@ export function AIImpactPlanner() {
         }
       ];
       
-      setSkillRecommendations(mockSkills);
+      // Apply any saved progress
+      const skillsWithProgress = mockSkills.map(skill => ({
+        ...skill,
+        inProgress: skillProgress[skill.name] || false
+      }));
+      
+      setSkillRecommendations(skillsWithProgress);
     } catch (error) {
       console.error('Error generating skill recommendations:', error);
     }
@@ -301,25 +381,43 @@ export function AIImpactPlanner() {
           title: 'AI Collaboration Fundamentals',
           url: 'https://www.coursera.org/learn/ai-collaboration',
           provider: 'Coursera',
-          skillArea: 'AI Collaboration Skills'
+          skillArea: 'AI Collaboration Skills',
+          costType: 'Freemium'
         },
         {
           title: 'Emotional Intelligence in the Workplace',
           url: 'https://www.linkedin.com/learning/emotional-intelligence-at-work',
           provider: 'LinkedIn Learning',
-          skillArea: 'Emotional Intelligence'
+          skillArea: 'Emotional Intelligence',
+          costType: 'Paid'
         },
         {
           title: 'Complex Problem Solving Masterclass',
           url: 'https://www.udemy.com/course/complex-problem-solving',
           provider: 'Udemy',
-          skillArea: 'Complex Problem Solving'
+          skillArea: 'Complex Problem Solving',
+          costType: 'Paid'
         },
         {
           title: 'Ethical Decision Making in Business',
           url: 'https://www.edx.org/learn/ethics/ethical-decision-making',
           provider: 'edX',
-          skillArea: 'Ethical Decision Making'
+          skillArea: 'Ethical Decision Making',
+          costType: 'Freemium'
+        },
+        {
+          title: 'Free Introduction to AI Ethics',
+          url: 'https://www.futurelearn.com/courses/ai-ethics',
+          provider: 'FutureLearn',
+          skillArea: 'Ethical Decision Making',
+          costType: 'Free'
+        },
+        {
+          title: 'Adaptability in the Workplace',
+          url: 'https://www.coursera.org/learn/adaptability-workplace',
+          provider: 'Coursera',
+          skillArea: 'Adaptability',
+          costType: 'Freemium'
         }
       ];
       
@@ -327,6 +425,38 @@ export function AIImpactPlanner() {
     } catch (error) {
       console.error('Error fetching resources:', error);
     }
+  };
+
+  // Track skill progress
+  const toggleSkillProgress = (skillName: string) => {
+    setSkillProgress(prev => {
+      const newProgress = { ...prev, [skillName]: !prev[skillName] };
+      
+      // Update localStorage
+      const savedPreferences = localStorage.getItem('aiImpactPlanner');
+      if (savedPreferences) {
+        try {
+          const preferences: UserPreferences = JSON.parse(savedPreferences);
+          preferences.skillProgress = newProgress;
+          localStorage.setItem('aiImpactPlanner', JSON.stringify(preferences));
+        } catch (error) {
+          console.error('Error updating saved preferences:', error);
+        }
+      }
+      
+      return newProgress;
+    });
+    
+    toast.success(`Progress updated for ${skillName}`);
+  };
+
+  // Submit feedback on task assessment
+  const submitFeedback = (taskId: string, isAccurate: boolean, comment?: string) => {
+    // In a real implementation, this would send to the backend
+    console.log('Feedback submitted:', { taskId, isAccurate, comment });
+    
+    toast.success('Thank you for your feedback!');
+    setFeedbackData(null);
   };
 
   // Reset all data
@@ -337,6 +467,9 @@ export function AIImpactPlanner() {
     setResources([]);
     setSearchQuery('');
     setOccupations([]);
+    setSkillProgress({});
+    setSimilarOccupations([]);
+    setCustomJobTitle('');
     localStorage.removeItem('aiImpactPlanner');
     toast.success('All data has been reset');
   };
@@ -363,6 +496,11 @@ export function AIImpactPlanner() {
   const getPercentage = (count: number) => {
     return totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
   };
+
+  // Filter tasks by confidence score
+  const filteredTasks = tasks.filter(task => 
+    task.confidence ? task.confidence * 100 >= confidenceFilter : true
+  );
 
   // Animation variants
   const containerVariants = {
@@ -471,6 +609,67 @@ export function AIImpactPlanner() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-purple-600" />
+                  Can't Find Your Occupation?
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-gray-600">
+                    Enter your job title below and we'll find the closest matching occupation.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter your job title (e.g., Growth Hacker, DevOps Engineer)"
+                      value={customJobTitle}
+                      onChange={(e) => setCustomJobTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && findSimilarOccupations(customJobTitle)}
+                    />
+                    <Button 
+                      onClick={() => findSimilarOccupations(customJobTitle)}
+                      disabled={isSearchingCustomJob || !customJobTitle.trim()}
+                    >
+                      {isSearchingCustomJob ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Searching...
+                        </>
+                      ) : (
+                        'Find Matches'
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {isSearchingCustomJob ? (
+                    <div className="py-4 text-center">
+                      <LoadingSpinner size="sm" text="Finding similar occupations..." />
+                    </div>
+                  ) : similarOccupations.length > 0 ? (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Similar Occupations:</h4>
+                      <div className="border rounded-md overflow-hidden">
+                        {similarOccupations.map((occ) => (
+                          <div
+                            key={occ.code}
+                            className="p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => setSelectedOccupation(occ)}
+                          >
+                            <div className="font-medium">{occ.title}</div>
+                            <div className="text-sm text-gray-500">Code: {occ.code}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -524,6 +723,12 @@ export function AIImpactPlanner() {
                     <Button variant="outline" onClick={handleReset}>
                       Reset All
                     </Button>
+                    {user && (
+                      <Button variant="outline" onClick={() => toast.success('Progress saved to your account')}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -657,11 +862,32 @@ export function AIImpactPlanner() {
                     
                     <Separator className="my-6" />
                     
+                    {/* Confidence filter */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium">Confidence Filter: {confidenceFilter}%+</h3>
+                        <div className="w-1/2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={confidenceFilter}
+                            onChange={(e) => setConfidenceFilter(parseInt(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Adjust to filter tasks by AI confidence score
+                      </p>
+                    </div>
+                    
                     {isLoading ? (
                       <div className="py-8 text-center">
                         <LoadingSpinner size="md" text="Analyzing tasks..." />
                       </div>
-                    ) : tasks.length > 0 ? (
+                    ) : filteredTasks.length > 0 ? (
                       <div className="space-y-6">
                         <div>
                           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -669,10 +895,14 @@ export function AIImpactPlanner() {
                             Tasks to Automate
                           </h3>
                           <div className="space-y-3">
-                            {tasks.filter(t => t.category === 'Automate').map(task => (
-                              <TaskCard key={task.id} task={task} />
+                            {filteredTasks.filter(t => t.category === 'Automate').map(task => (
+                              <TaskCard 
+                                key={task.id} 
+                                task={task} 
+                                onFeedback={(isAccurate, comment) => submitFeedback(task.id, isAccurate, comment)}
+                              />
                             ))}
-                            {tasks.filter(t => t.category === 'Automate').length === 0 && (
+                            {filteredTasks.filter(t => t.category === 'Automate').length === 0 && (
                               <p className="text-gray-500 text-sm italic">No tasks in this category</p>
                             )}
                           </div>
@@ -684,10 +914,14 @@ export function AIImpactPlanner() {
                             Tasks to Augment
                           </h3>
                           <div className="space-y-3">
-                            {tasks.filter(t => t.category === 'Augment').map(task => (
-                              <TaskCard key={task.id} task={task} />
+                            {filteredTasks.filter(t => t.category === 'Augment').map(task => (
+                              <TaskCard 
+                                key={task.id} 
+                                task={task} 
+                                onFeedback={(isAccurate, comment) => submitFeedback(task.id, isAccurate, comment)}
+                              />
                             ))}
-                            {tasks.filter(t => t.category === 'Augment').length === 0 && (
+                            {filteredTasks.filter(t => t.category === 'Augment').length === 0 && (
                               <p className="text-gray-500 text-sm italic">No tasks in this category</p>
                             )}
                           </div>
@@ -699,10 +933,14 @@ export function AIImpactPlanner() {
                             Human-only Tasks
                           </h3>
                           <div className="space-y-3">
-                            {tasks.filter(t => t.category === 'Human-only').map(task => (
-                              <TaskCard key={task.id} task={task} />
+                            {filteredTasks.filter(t => t.category === 'Human-only').map(task => (
+                              <TaskCard 
+                                key={task.id} 
+                                task={task} 
+                                onFeedback={(isAccurate, comment) => submitFeedback(task.id, isAccurate, comment)}
+                              />
                             ))}
-                            {tasks.filter(t => t.category === 'Human-only').length === 0 && (
+                            {filteredTasks.filter(t => t.category === 'Human-only').length === 0 && (
                               <p className="text-gray-500 text-sm italic">No tasks in this category</p>
                             )}
                           </div>
@@ -710,7 +948,9 @@ export function AIImpactPlanner() {
                       </div>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
-                        No tasks available for this occupation.
+                        {tasks.length > 0 ? 
+                          'No tasks match your confidence filter. Try lowering the threshold.' : 
+                          'No tasks available for this occupation.'}
                       </div>
                     )}
                   </CardContent>
@@ -738,10 +978,31 @@ export function AIImpactPlanner() {
                         {skillRecommendations.map((skill, index) => (
                           <div 
                             key={index} 
-                            className="bg-purple-50 p-4 rounded-lg border border-purple-100"
+                            className={`p-4 rounded-lg border ${skill.inProgress ? 'bg-purple-100 border-purple-300' : 'bg-purple-50 border-purple-100'}`}
                           >
-                            <h3 className="font-semibold text-purple-800 mb-2">{skill.name}</h3>
-                            <p className="text-sm text-purple-700">{skill.explanation}</p>
+                            <div className="flex items-start gap-3">
+                              <div className="flex items-center h-6 mt-0.5">
+                                <Checkbox 
+                                  id={`skill-${index}`}
+                                  checked={skill.inProgress}
+                                  onCheckedChange={() => toggleSkillProgress(skill.name)}
+                                />
+                              </div>
+                              <div>
+                                <label 
+                                  htmlFor={`skill-${index}`}
+                                  className={`font-semibold text-purple-800 mb-2 ${skill.inProgress ? 'line-through opacity-70' : ''}`}
+                                >
+                                  {skill.name}
+                                </label>
+                                <p className={`text-sm text-purple-700 ${skill.inProgress ? 'opacity-70' : ''}`}>
+                                  {skill.explanation}
+                                </p>
+                                {skill.inProgress && (
+                                  <Badge className="mt-2 bg-purple-200 text-purple-800">In Progress</Badge>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -795,7 +1056,18 @@ export function AIImpactPlanner() {
                                 <h3 className="font-medium text-blue-700">{resource.title}</h3>
                                 <p className="text-sm text-gray-600 mt-1">Provider: {resource.provider}</p>
                               </div>
-                              <Badge variant="outline">{resource.skillArea}</Badge>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge variant="outline">{resource.skillArea}</Badge>
+                                {resource.costType && (
+                                  <Badge className={
+                                    resource.costType === 'Free' ? 'bg-green-100 text-green-800' :
+                                    resource.costType === 'Freemium' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }>
+                                    {resource.costType}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             <div className="mt-3">
                               <a 
@@ -835,12 +1107,61 @@ export function AIImpactPlanner() {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Feedback Modal */}
+      {feedbackData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Assessment Feedback</h3>
+            <p className="mb-4">Is this assessment accurate?</p>
+            <div className="flex gap-4 mb-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => submitFeedback(feedbackData.taskId, true)}
+              >
+                <ThumbsUp className="h-4 w-4 mr-2" />
+                Yes, it's accurate
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => submitFeedback(feedbackData.taskId, false)}
+              >
+                <ThumbsUp className="h-4 w-4 mr-2 rotate-180" />
+                No, it's not accurate
+              </Button>
+            </div>
+            <Textarea 
+              placeholder="Optional: Tell us why you think this assessment is or isn't accurate..."
+              className="mb-4"
+              value={feedbackData.comment || ''}
+              onChange={(e) => setFeedbackData({...feedbackData, comment: e.target.value})}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setFeedbackData(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => submitFeedback(feedbackData.taskId, feedbackData.isAccurate, feedbackData.comment)}>
+                Submit Feedback
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // Helper components
-const TaskCard = ({ task }: { task: Task }) => {
+interface TaskCardProps {
+  task: Task;
+  onFeedback: (isAccurate: boolean, comment?: string) => void;
+}
+
+const TaskCard = ({ task, onFeedback }: TaskCardProps) => {
+  const [showFeedback, setShowFeedback] = useState(false);
+  
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'Automate': return 'bg-red-50 border-red-200';
@@ -875,22 +1196,63 @@ const TaskCard = ({ task }: { task: Task }) => {
           {getCategoryIcon(task.category)}
         </div>
         <div className="flex-1">
-          <p className="font-medium">{task.description}</p>
+          <div className="flex justify-between">
+            <p className="font-medium">{task.description}</p>
+            {task.isCustom && (
+              <Badge variant="outline" className="text-xs">Custom</Badge>
+            )}
+          </div>
           {task.explanation && (
             <p className={`text-sm mt-1 ${getCategoryTextColor(task.category)}`}>
               {task.explanation}
             </p>
           )}
-          {task.confidence && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-gray-500">Confidence:</span>
-              <Progress 
-                value={task.confidence * 100} 
-                className="h-1.5 w-24" 
-              />
-              <span className="text-xs text-gray-500">
-                {Math.round(task.confidence * 100)}%
-              </span>
+          <div className="flex items-center justify-between mt-2">
+            {task.confidence && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Confidence:</span>
+                <Progress 
+                  value={task.confidence * 100} 
+                  className="h-1.5 w-24" 
+                />
+                <span className="text-xs text-gray-500">
+                  {Math.round(task.confidence * 100)}%
+                </span>
+              </div>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs"
+              onClick={() => setShowFeedback(!showFeedback)}
+            >
+              {showFeedback ? 'Cancel' : 'Provide Feedback'}
+            </Button>
+          </div>
+          
+          {showFeedback && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-sm mb-2">Is this assessment accurate?</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => onFeedback(true)}
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  Yes
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => onFeedback(false)}
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1 rotate-180" />
+                  No
+                </Button>
+              </div>
             </div>
           )}
         </div>
