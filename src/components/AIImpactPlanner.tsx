@@ -7,20 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Search, 
-  Robot, 
-  Brain, 
-  User, 
-  Zap, 
-  BookOpen, 
-  Lightbulb, 
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Save,
-  RefreshCw
-} from 'lucide-react';
+import { Search, Notebook as Robot, Brain, User, Zap, BookOpen, Lightbulb, AlertTriangle, CheckCircle, Clock, Save, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
@@ -285,7 +272,7 @@ export function AIImpactPlanner() {
         },
         {
           name: 'Emotional Intelligence',
-          explanation: 'Understanding others' emotions, responding appropriately, and building relationships are human strengths that AI cannot replicate.'
+          explanation: 'Understanding others\' emotions, responding appropriately, and building relationships are human strengths that AI cannot replicate.'
         },
         {
           name: 'AI Collaboration Skills',
