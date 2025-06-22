@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +14,8 @@ import {
   TrendingUp, 
   Shield,
   Brain,
-  Sparkles
+  Sparkles,
+  Robot
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -167,6 +167,22 @@ export function EnhancedAPODashboardHeader({ userEmail }: EnhancedAPODashboardHe
                   transition={{ duration: 0.2 }}
                 >
                   <NotificationSystem />
+                </motion.div>
+
+                {/* AI Impact Planner Button */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/ai-impact-planner')}
+                    className="text-white hover:bg-white/20 border border-white/20 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Robot className="w-4 h-4 mr-1 sm:mr-2" />
+                    <span>AI Impact Planner</span>
+                  </Button>
                 </motion.div>
 
                 {/* User Menu */}

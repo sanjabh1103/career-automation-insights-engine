@@ -14,6 +14,7 @@ import { SelectedCareersPanel } from "./SelectedCareersPanel";
 import { OnboardingTour } from "./OnboardingTour";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { motion } from 'framer-motion';
+import { AIImpactPlannerButton } from './AIImpactPlannerButton';
 
 export interface SelectedOccupation {
   code: string;
@@ -185,6 +186,17 @@ export const APODashboard = () => {
             </div>
 
             <div className="space-y-4 sm:space-y-6">
+              <ErrorBoundary>
+                <motion.div variants={sectionVariants}>
+                  <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4">
+                      <h3 className="text-lg font-semibold">Tools & Resources</h3>
+                      <AIImpactPlannerButton />
+                    </div>
+                  </Card>
+                </motion.div>
+              </ErrorBoundary>
+
               <ErrorBoundary>
                 <motion.div variants={sectionVariants}>
                   <TopCareersPanel />
