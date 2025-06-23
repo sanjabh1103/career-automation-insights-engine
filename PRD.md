@@ -11,7 +11,7 @@
 - Enable data-driven career planning and workforce development decisions
 - Deliver actionable insights on job security and future employment trends
 - Support comparative analysis across different occupations
-- Help workers understand and prepare for AI's impact on their specific jobs
+- Help workers understand and prepare for AI's impact on their careers
 
 ### 3. Key Features
 
@@ -46,15 +46,13 @@
 - **Input Sanitization:** XSS and injection attack prevention
 
 #### 3.6 AI Impact Career Planner
-- **Task Categorization:** Analyze job tasks as Automate, Augment, or Human-only
-- **Custom Task Assessment:** Assess specific tasks using Gemini AI
-- **Skill Recommendations:** Personalized future-proof skill suggestions
-- **Reskilling Resources:** Curated learning resources for skill development
-- **Progress Tracking:** Monitor skill acquisition progress
-- **Confidence Filtering:** Filter tasks by AI confidence score
-- **Feedback System:** Provide feedback on assessment accuracy
+- **Task Automation Assessment:** Analyze which tasks might be automated, augmented, or remain human-only
+- **Personalized Task Analysis:** Input specific tasks to get automation potential assessment
+- **Skill Recommendations:** Get personalized skill development recommendations to stay relevant
+- **Learning Resources:** Access curated resources for upskilling
+- **Progress Tracking:** Track skill development progress
 
-### 4. Technical Architecture
+### 4. Technical Requirements
 
 #### 4.1 Frontend Stack
 - **Framework:** React 18 with TypeScript
@@ -66,115 +64,17 @@
 #### 4.2 Backend Integration
 - **Database:** Supabase PostgreSQL
 - **Authentication:** Supabase Auth
-- **APIs:** O*NET Web Services, Google Gemini AI
+- **APIs:** 
+  - O*NET Web Services
+  - Google Gemini 2.5 Pro
+  - SerpAPI
 - **Functions:** Supabase Edge Functions
 
-#### 4.3 Database Schema
-
-```mermaid
-erDiagram
-    profiles {
-        uuid id PK
-        text email
-        text full_name
-        text avatar_url
-        text subscription_tier
-        integer api_credits
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    saved_analyses {
-        uuid id PK
-        uuid user_id FK
-        text occupation_code
-        text occupation_title
-        jsonb analysis_data
-        text[] tags
-        text notes
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    shared_analyses {
-        uuid id PK
-        uuid user_id FK
-        uuid analysis_id FK
-        text share_token
-        text share_type
-        text shared_with_email
-        timestamp expires_at
-        integer view_count
-        integer max_views
-        boolean is_active
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    search_history {
-        uuid id PK
-        uuid user_id FK
-        text search_term
-        integer results_count
-        timestamp searched_at
-    }
-    
-    user_settings {
-        uuid id PK
-        uuid user_id FK
-        jsonb settings
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    apo_analysis_cache {
-        uuid id PK
-        text occupation_code
-        text occupation_title
-        jsonb analysis_data
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    ai_task_assessments {
-        uuid id PK
-        uuid user_id FK
-        text occupation_code
-        text occupation_title
-        text task_description
-        text category
-        text explanation
-        numeric confidence
-        timestamp created_at
-    }
-    
-    ai_skill_recommendations {
-        uuid id PK
-        text occupation_code
-        text skill_name
-        text explanation
-        integer priority
-        timestamp created_at
-    }
-    
-    ai_reskilling_resources {
-        uuid id PK
-        text skill_area
-        text title
-        text url
-        text provider
-        text description
-        text cost_type
-        timestamp created_at
-    }
-    
-    profiles ||--o{ saved_analyses : "creates"
-    profiles ||--o{ shared_analyses : "shares"
-    profiles ||--o{ search_history : "searches"
-    profiles ||--o{ user_settings : "configures"
-    profiles ||--o{ ai_task_assessments : "assesses"
-    saved_analyses ||--o{ shared_analyses : "is shared as"
-```
+#### 4.3 Security Features
+- **CSP Headers:** Content Security Policy implementation
+- **XSS Protection:** Input sanitization and validation
+- **Rate Limiting:** User and IP-based throttling
+- **Secure Headers:** X-Frame-Options, X-Content-Type-Options
 
 ### 5. User Workflows
 
@@ -186,157 +86,245 @@ erDiagram
 5. Save analysis or add to comparison
 6. Export results or share insights
 
-#### 5.2 AI Impact Planner Workflow
-1. User navigates to AI Impact Planner
-2. Searches for occupation or enters custom job title
-3. Views tasks categorized by automation potential
-4. Adds custom tasks for assessment
-5. Reviews skill recommendations
-6. Explores reskilling resources
-7. Tracks progress on skill development
+#### 5.2 AI Impact Career Planner Workflow
+1. User selects their occupation
+2. System analyzes tasks and categorizes them (Automate/Augment/Human-only)
+3. User can input specific tasks for personalized assessment
+4. System recommends skills to develop based on analysis
+5. User accesses learning resources and tracks progress
 
-### 6. User Stories
+#### 5.3 Secondary Workflows
+- **Bulk Analysis:** Compare multiple occupations
+- **Historical Tracking:** Monitor changes over time
+- **Team Collaboration:** Share analyses with colleagues
+- **Data Export:** Generate reports for stakeholders
+
+### 6. Performance Metrics
+
+#### 6.1 User Engagement
+- **Daily Active Users:** Target 1000+ DAU
+- **Session Duration:** Average 15+ minutes
+- **Search Completion Rate:** 85%+
+- **Export Usage:** 40% of analyses exported
+
+#### 6.2 Technical Performance
+- **Page Load Time:** < 3 seconds
+- **API Response Time:** < 2 seconds
+- **Uptime:** 99.9% availability
+- **Error Rate:** < 0.1%
+
+### 7. Compliance & Security
+
+#### 7.1 Data Protection
+- **GDPR Compliance:** EU data protection standards
+- **Data Retention:** User-controlled data lifecycle
+- **Privacy Controls:** Granular privacy settings
+- **Audit Logging:** Comprehensive activity tracking
+
+#### 7.2 Security Standards
+- **OWASP Top 10:** Complete vulnerability coverage
+- **Input Validation:** Comprehensive sanitization
+- **Secure Communication:** HTTPS/TLS encryption
+- **Access Controls:** Role-based permissions
+
+### 8. Database Schema
+
+#### Core Tables
+- **profiles:** User profiles and subscription information
+- **saved_analyses:** Stored occupation analyses with metadata
+- **shared_analyses:** Sharing configuration and access controls
+- **search_history:** User search tracking and analytics
+- **user_settings:** User preferences and configurations
+- **notifications:** User notification system
+- **analytics_events:** Usage tracking and metrics
+
+#### AI Impact Career Planner Tables
+- **ai_task_assessments:** Task automation assessments
+- **ai_skill_recommendations:** Recommended skills for occupations
+- **ai_reskilling_resources:** Learning resources for skill development
+
+#### Relationships
+```
+profiles (1) --- (*) saved_analyses
+profiles (1) --- (*) search_history
+profiles (1) --- (1) user_settings
+saved_analyses (1) --- (*) shared_analyses
+profiles (1) --- (*) ai_task_assessments
+occupation_code (*) --- (*) ai_skill_recommendations
+skill_area (*) --- (*) ai_reskilling_resources
+```
+
+### 9. API Integrations
+
+#### 9.1 O*NET Web Services
+- **Purpose:** Occupation data and metadata
+- **Endpoints:**
+  - `/search`: Find occupations by keyword
+  - `/occupations/{code}/details`: Get detailed occupation information
+- **Rate Limits:** 1000 requests per day
+
+#### 9.2 Google Gemini 2.5 Pro
+- **Purpose:** AI-powered analysis and recommendations
+- **Capabilities:**
+  - APO calculation and confidence scoring
+  - Task automation assessment
+  - Skill recommendations
+  - Learning resource suggestions
+- **Rate Limits:** Based on API quota
+
+#### 9.3 SerpAPI
+- **Purpose:** Job market data and learning resources
+- **Endpoints:**
+  - Google Jobs search for market data
+  - Google search for learning resources
+- **Rate Limits:** Based on subscription tier
+
+### 10. Supabase Edge Functions
+
+#### 10.1 onet-proxy
+- **Purpose:** Proxy requests to O*NET Web Services
+- **Inputs:** Search parameters, occupation codes
+- **Outputs:** Occupation data, task information
+
+#### 10.2 calculate-apo
+- **Purpose:** Calculate automation potential for occupations
+- **Inputs:** Occupation data
+- **Outputs:** APO scores, category breakdowns, confidence levels
+
+#### 10.3 analyze-occupation-tasks
+- **Purpose:** Analyze tasks for automation potential
+- **Inputs:** Occupation code, title
+- **Outputs:** Tasks categorized as Automate/Augment/Human-only
+
+#### 10.4 assess-task
+- **Purpose:** Analyze user-input tasks
+- **Inputs:** Task description, occupation context
+- **Outputs:** Category, explanation, confidence score
+
+#### 10.5 skill-recommendations
+- **Purpose:** Generate skill recommendations
+- **Inputs:** Occupation code, title
+- **Outputs:** Recommended skills with explanations and priorities
+
+#### 10.6 serpapi-jobs
+- **Purpose:** Fetch job market data
+- **Inputs:** Job title, location
+- **Outputs:** Job listings, salary data, demand metrics
+
+### 11. User Stories
 
 #### Core APO Dashboard
-1. As a worker, I want to search for occupations to analyze their automation potential
-2. As a worker, I want to save analyses for future reference
-3. As a worker, I want to compare multiple occupations side by side
-4. As a worker, I want to export my analyses as CSV or PDF
-5. As a worker, I want to share my analyses with colleagues
+1. As a worker, I want to select my occupation from a list so that I can see how AI might affect my job.
+2. As a worker, I want to see a detailed breakdown of automation potential across different aspects of my job.
+3. As a career advisor, I want to compare multiple occupations side-by-side to help my clients make informed decisions.
+4. As a researcher, I want to export data for further analysis in other tools.
+5. As a user, I want to save my analyses for future reference.
 
 #### AI Impact Career Planner
-1. As a worker, I want to select my occupation from a list so that I can see how AI might affect my job (High Priority)
-2. As a worker, I want to see which tasks in my occupation are likely to be automated so that I can prepare accordingly (High Priority)
-3. As a worker, I want to know which tasks will still require human involvement so that I can focus on those areas (High Priority)
-4. As a worker, I want recommendations on skills to develop to stay relevant in my field (High Priority)
-5. As a worker, I want access to reskilling resources to learn new skills (Medium Priority)
-6. As a worker in a non-listed occupation, I want to input my job title and get an assessment based on similar occupations (Medium Priority)
-7. As a worker, I want to input specific tasks I perform and get an assessment of their automation potential (High Priority)
-8. As a career advisor, I want to use this tool to help my clients understand AI's impact on their careers (Medium Priority)
-9. As a student, I want to explore different occupations and see how AI might affect them to make informed career choices (Medium Priority)
-10. As a worker, I want to save my assessment results for future reference (Medium Priority)
-11. As a worker, I want to track my progress in acquiring recommended skills (Low Priority)
-12. As a user, I want the app to remember my occupation and preferences using local storage (High Priority)
-13. As a user, I want the app to be responsive and work on mobile devices (High Priority)
-14. As a user, I want to provide feedback on the accuracy of the assessments to help improve the app (Low Priority)
-15. As a worker, I want to see a confidence score for task assessments to understand their reliability (Medium Priority)
+1. As a worker, I want to see which tasks in my occupation are likely to be automated so that I can prepare accordingly.
+2. As a worker, I want to know which tasks will still require human involvement so that I can focus on those areas.
+3. As a worker, I want recommendations on skills to develop to stay relevant in my field.
+4. As a worker, I want to input specific tasks I perform and get an assessment of their automation potential.
+5. As a worker, I want access to reskilling resources to learn new skills.
 
-### 7. API Endpoints
+### 12. Future Roadmap
 
-#### Supabase Edge Functions
+#### 12.1 Phase 2 Features
+- **Industry Trends:** Sector-wide automation insights
+- **Skill Recommendations:** Personalized upskilling suggestions
+- **Market Integration:** Job posting and salary data
+- **Advanced Analytics:** Predictive modeling
 
-| Function | Description | Parameters | Response |
-|----------|-------------|------------|----------|
-| `onet-proxy` | Proxies requests to O*NET Web Services | `onetPath`: string | O*NET API response |
-| `calculate-apo` | Calculates automation potential for an occupation | `occupation`: object | APO analysis data |
-| `serpapi-jobs` | Fetches job market data from SerpAPI | `jobTitle`: string | Job market data |
-| `assess-task` | Analyzes a task's automation potential | `taskDescription`: string | Task assessment |
-| `skill-recommendations` | Generates skill recommendations | `occupation`, `automatedTasks`, `humanTasks` | Skill recommendations |
+#### 12.2 Phase 3 Enhancements
+- **Mobile App:** Native iOS/Android applications
+- **API Marketplace:** Third-party integrations
+- **Enterprise Features:** Multi-tenant architecture
+- **AI Model Training:** Custom automation models
 
-### 8. Non-Functional Requirements
+### 13. Success Criteria
+- **User Adoption:** 10,000+ registered users in first quarter
+- **Analysis Accuracy:** 90%+ user satisfaction with AI insights
+- **Performance:** Sub-3-second load times maintained
+- **Security:** Zero critical vulnerabilities
+- **Business Impact:** Measurable career planning improvements
 
-- **Performance:** Page load time < 2 seconds; API response time < 1 second
-- **Scalability:** Handle up to 10,000 concurrent users
-- **Security:** Secure API key storage; HTTPS for all requests
-- **Accessibility:** WCAG 2.1 AA compliance
-- **Browser Compatibility:** Support latest versions of Chrome, Firefox, Safari, Edge
+### 14. Risk Assessment
 
-### 9. Future Enhancements
+#### 14.1 Technical Risks
+- **API Dependencies:** O*NET service availability
+- **AI Model Changes:** Google Gemini API modifications
+- **Scalability:** Database performance under load
+- **Security Threats:** Evolving attack vectors
 
-- **AI Career Transition Planner:** Personalized career transition recommendations
-- **Job Market Integration:** Real-time job postings for AI-resilient roles
-- **Skill Gap Analysis:** Detailed assessment of skill gaps and learning paths
-- **Personalized Learning Paths:** Custom learning paths based on skill gaps
-- **Community Features:** Discussion forums and community insights
+#### 14.2 Mitigation Strategies
+- **Redundancy:** Multiple data source fallbacks
+- **Monitoring:** Comprehensive system health checks
+- **Backup Systems:** Automated data recovery
+- **Security Updates:** Regular vulnerability assessments
 
-### 10. Success Metrics
+### 15. Architecture Diagram
 
-- **User Engagement:** 70% of users returning within 30 days
-- **Task Assessment Accuracy:** 80% user satisfaction with task assessments
-- **Skill Development:** 50% of users reporting progress on recommended skills
-- **User Growth:** 100,000 users within 12 months
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Supabase       │    │   External APIs │
+│   (React/Vite)  │◄──►│   Backend        │◄──►│   (O*NET, AI)   │
+│                 │    │                  │    │                 │
+│   - Static Site │    │   - PostgreSQL   │    │   - Google AI   │
+│   - CDN Hosted  │    │   - Auth         │    │   - SerpAPI     │
+│   - Auto-scale  │    │   - Edge Funcs   │    │   - O*NET API   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
 
----
+### 16. LLM System Prompts
 
-## Technical Implementation Details
+#### Task Assessment Prompt
+```
+You are an AI assistant assessing task automation potential. Based on the task description, classify it as:
+1. Automate (repetitive, low-value, stressful tasks that can be fully automated)
+2. Augment (tasks that benefit from AI assistance but need human oversight)
+3. Human-only (tasks requiring creativity, interpersonal skills, or domain expertise)
 
-### Database Tables
+Provide a brief explanation and a confidence score (0-1).
 
-#### Core APO Dashboard Tables
+Task description: [task description]
 
-1. **profiles**
-   - User profiles and subscription information
-   - Contains: id, email, full_name, avatar_url, subscription_tier, api_credits
+Output format: 
+{
+  "category": "Automate/Augment/Human-only",
+  "explanation": "Brief explanation of why this task falls into this category",
+  "confidence": 0.85
+}
+```
 
-2. **saved_analyses**
-   - Stores user's saved occupation analyses
-   - Contains: id, user_id, occupation_code, occupation_title, analysis_data, tags, notes
+#### Skill Recommendations Prompt
+```
+You are a career advisor specializing in AI's impact on jobs. Based on the occupation, recommend 5 key skills that workers should develop to stay relevant as AI transforms their field.
 
-3. **shared_analyses**
-   - Manages sharing of analyses with others
-   - Contains: id, user_id, analysis_id, share_token, share_type, expires_at, view_count
+For each skill:
+1. Provide a specific, actionable skill name (not general categories)
+2. Explain why this skill is important for future-proofing this career
+3. Assign a priority level (1=highest, 3=lowest)
 
-4. **search_history**
-   - Tracks user search history
-   - Contains: id, user_id, search_term, results_count, searched_at
+Focus on skills that:
+- Complement AI capabilities rather than compete with them
+- Emphasize uniquely human abilities (creativity, empathy, complex judgment)
+- Have transferability across roles and industries
+- Are in growing demand based on job market trends
 
-5. **user_settings**
-   - Stores user preferences and settings
-   - Contains: id, user_id, settings (jsonb)
-
-6. **apo_analysis_cache**
-   - Caches APO analysis results for performance
-   - Contains: id, occupation_code, occupation_title, analysis_data
-
-#### AI Impact Planner Tables
-
-1. **ai_task_assessments**
-   - Stores task automation assessments
-   - Contains: id, user_id, occupation_code, occupation_title, task_description, category, explanation, confidence
-
-2. **ai_skill_recommendations**
-   - Stores skill recommendations for occupations
-   - Contains: id, occupation_code, skill_name, explanation, priority
-
-3. **ai_reskilling_resources**
-   - Stores learning resources for skill development
-   - Contains: id, skill_area, title, url, provider, description, cost_type
-
-### Security Implementation
-
-1. **Row Level Security (RLS)**
-   - All tables have RLS policies to ensure users can only access their own data
-   - Public tables (like resources) have read-only access for all users
-
-2. **API Security**
-   - API keys stored as environment variables in Supabase
-   - Rate limiting implemented for all API endpoints
-   - Input validation and sanitization for all user inputs
-
-3. **Authentication**
-   - Email/password authentication via Supabase Auth
-   - JWT tokens for secure API access
-   - Password policies enforced (minimum length, complexity)
-
-### Performance Optimizations
-
-1. **Caching Strategy**
-   - APO analyses cached in `apo_analysis_cache` table
-   - Browser localStorage for user preferences and recent searches
-   - React Query for client-side data caching
-
-2. **Database Indexes**
-   - Indexes on frequently queried columns (user_id, occupation_code)
-   - Composite indexes for complex queries
-
-3. **API Optimization**
-   - Batched requests to reduce API calls
-   - Pagination for large result sets
-   - Compression for response payloads
+Output format:
+[
+  {
+    "skill_name": "Specific skill name",
+    "explanation": "Detailed explanation of why this skill matters",
+    "priority": 1
+  }
+]
+```
 
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** 2025-06-22  
-**Next Review:** 2025-07-22  
-**Owner:** Product Team
+**Last Updated:** 2025-06-17  
+**Next Review:** 2025-07-17  
+**Owner:** Product Team  
+**Stakeholders:** Engineering, Design, Security, Business

@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import SharedAnalysisPage from "./pages/SharedAnalysisPage";
-import AIImpactPlannerPage from "./pages/AIImpactPlannerPage";
+import AIImpactPage from "./pages/AIImpactPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +24,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<UserDashboardPage />} />
             <Route path="/shared/:shareToken" element={<SharedAnalysisPage />} />
-            <Route path="/ai-impact-planner" element={<AIImpactPlannerPage />} />
+            <Route path="/ai-impact" element={<AIImpactPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

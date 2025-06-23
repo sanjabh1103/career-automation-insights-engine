@@ -7,7 +7,16 @@ import { NotificationSystem } from './NotificationSystem';
 import { APICreditsDisplay } from './APICreditsDisplay';
 import { RateLimitDisplay } from './RateLimitDisplay';
 import { motion } from 'framer-motion';
-import { User, Settings, Zap, TrendingUp, Shield, Brain, Sparkles, Notebook as Robot } from 'lucide-react';
+import { 
+  User, 
+  Settings, 
+  Zap, 
+  TrendingUp, 
+  Shield,
+  Brain,
+  Sparkles,
+  Robot
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface EnhancedAPODashboardHeaderProps {
@@ -150,6 +159,22 @@ export function EnhancedAPODashboardHeader({ userEmail }: EnhancedAPODashboardHe
 
               {/* User Actions */}
               <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+                {/* AI Impact Career Planner Button */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/ai-impact')}
+                    className="text-white hover:bg-white/20 border border-white/20 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Robot className="w-4 h-4 mr-1 sm:mr-2" />
+                    <span>AI Impact Planner</span>
+                  </Button>
+                </motion.div>
+
                 {/* Notifications */}
                 <motion.div 
                   className="bg-white/10 backdrop-blur-sm rounded-lg p-1"
@@ -158,22 +183,6 @@ export function EnhancedAPODashboardHeader({ userEmail }: EnhancedAPODashboardHe
                   transition={{ duration: 0.2 }}
                 >
                   <NotificationSystem />
-                </motion.div>
-
-                {/* AI Impact Planner Button */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/ai-impact-planner')}
-                    className="text-white hover:bg-white/20 border border-white/20 text-xs sm:text-sm px-2 sm:px-3"
-                  >
-                    <Robot className="w-4 h-4 mr-1 sm:mr-2" />
-                    <span>AI Impact Planner</span>
-                  </Button>
                 </motion.div>
 
                 {/* User Menu */}

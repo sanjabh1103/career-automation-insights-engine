@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const geminiApiKey = Deno.env.get('GOOGLE_AI_API_KEY');
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,39 +15,48 @@ serve(async (req) => {
   }
 
   try {
-    if (!geminiApiKey) {
+    if (!GEMINI_API_KEY) {
       throw new Error('Gemini API key is not configured');
     }
 
-    const { taskDescription } = await req.json();
+    const { taskDescription, occupationContext } = await req.json();
     
     if (!taskDescription) {
       throw new Error('Task description is required');
     }
 
-    console.log(`Assessing task: ${taskDescription}`);
+    console.log(`Assessing task: "${taskDescription.substring(0, 50)}..."`);
+    if (occupationContext) {
+      console.log(`Occupation context: ${occupationContext}`);
+    }
 
-    // Prompt for Gemini to assess the task
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Prepare the prompt for Gemini
     const prompt = `
-You are an AI assistant assessing task automation potential. Based on the task description, classify it into one of these categories:
+You are an AI assistant assessing task automation potential. Based on the task description${occupationContext ? ` for the occupation "${occupationContext}"` : ''}, classify it as:
 
-1. Automate: Tasks that are repetitive, rule-based, involve structured data, or are stressful/dangerous for humans. These can be fully automated by AI.
+1. Automate (repetitive, low-value, stressful tasks that can be fully automated)
+2. Augment (tasks that benefit from AI assistance but need human oversight)
+3. Human-only (tasks requiring creativity, interpersonal skills, or domain expertise)
 
-2. Augment: Tasks that benefit from AI assistance but still require human oversight, judgment, or contextual understanding. AI and humans work together.
-
-3. Human-only: Tasks requiring creativity, empathy, complex ethical decisions, or high-level interpersonal skills that AI cannot replicate.
+Provide a brief explanation and a confidence score (0-1).
 
 Task description: ${taskDescription}
 
-Provide your assessment in this JSON format:
+Output format: 
 {
   "category": "Automate/Augment/Human-only",
   "explanation": "Brief explanation of why this task falls into this category",
-  "confidence": 0.XX (a number between 0 and 1 representing your confidence in this assessment)
+  "confidence": 0.85
 }
 `;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
+    // Call Gemini API
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,26 +76,26 @@ Provide your assessment in this JSON format:
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
       console.error('Gemini API Error:', errorText);
-      throw new Error(`Gemini API request failed: ${response.statusText}`);
+      throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
     }
 
-    const data = await response.json();
+    const geminiData = await geminiResponse.json();
     
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    if (!geminiData.candidates || !geminiData.candidates[0] || !geminiData.candidates[0].content) {
       throw new Error('Invalid response from Gemini API');
     }
 
-    const generatedText = data.candidates[0].content.parts[0].text;
+    const generatedText = geminiData.candidates[0].content.parts[0].text;
     
-    // Extract JSON from the response
-    let assessment;
+    // Extract JSON from response
+    let assessmentData;
     try {
       const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        assessment = JSON.parse(jsonMatch[0]);
+        assessmentData = JSON.parse(jsonMatch[0]);
       } else {
         throw new Error('No JSON found in response');
       }
@@ -94,7 +104,39 @@ Provide your assessment in this JSON format:
       throw new Error('Failed to parse task assessment from Gemini');
     }
 
-    return new Response(JSON.stringify(assessment), {
+    // Get user ID from auth if available
+    let userId = null;
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id;
+      }
+    } catch (authError) {
+      console.error('Auth error:', authError);
+    }
+
+    // Store assessment in Supabase if user is authenticated
+    if (userId) {
+      const { error: insertError } = await supabase
+        .from('ai_task_assessments')
+        .insert({
+          user_id: userId,
+          occupation_code: 'custom',
+          occupation_title: occupationContext || 'Custom Task',
+          task_description: taskDescription,
+          category: assessmentData.category,
+          explanation: assessmentData.explanation,
+          confidence: assessmentData.confidence
+        });
+
+      if (insertError) {
+        console.error('Error storing task assessment:', insertError);
+      }
+    }
+
+    return new Response(JSON.stringify(assessmentData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
@@ -102,6 +144,7 @@ Provide your assessment in this JSON format:
     return new Response(JSON.stringify({ 
       error: error.message,
       timestamp: new Date().toISOString(),
+      function: 'assess-task'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

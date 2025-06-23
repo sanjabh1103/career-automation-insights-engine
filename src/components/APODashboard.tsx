@@ -14,7 +14,9 @@ import { SelectedCareersPanel } from "./SelectedCareersPanel";
 import { OnboardingTour } from "./OnboardingTour";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { motion } from 'framer-motion';
-import { AIImpactPlannerButton } from './AIImpactPlannerButton';
+import { Button } from './ui/button';
+import { Robot } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export interface SelectedOccupation {
   code: string;
@@ -52,6 +54,7 @@ export const APODashboard = () => {
   const [selectedOccupation, setSelectedOccupation] = useState<SelectedOccupation | null>(null);
   const [selectedJobs, setSelectedJobs] = useState<SelectedOccupation[]>([]);
   const [showExport, setShowExport] = useState(false);
+  const navigate = useNavigate();
 
   const savedSelections = useSavedSelections<SelectedOccupation[]>();
 
@@ -183,20 +186,30 @@ export const APODashboard = () => {
                   </ErrorBoundary>
                 </motion.div>
               )}
+
+              <motion.div variants={sectionVariants}>
+                <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">AI Impact Career Planner</h3>
+                      <Button 
+                        onClick={() => navigate('/ai-impact')}
+                        className="gap-2"
+                      >
+                        <Robot className="w-4 h-4" />
+                        Open Planner
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Understand how AI might affect your job, which tasks could be automated or augmented, 
+                      and what skills to develop to stay relevant in your field.
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-              <ErrorBoundary>
-                <motion.div variants={sectionVariants}>
-                  <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-white/80 backdrop-blur-sm">
-                    <div className="flex flex-col space-y-4">
-                      <h3 className="text-lg font-semibold">Tools & Resources</h3>
-                      <AIImpactPlannerButton />
-                    </div>
-                  </Card>
-                </motion.div>
-              </ErrorBoundary>
-
               <ErrorBoundary>
                 <motion.div variants={sectionVariants}>
                   <TopCareersPanel />
