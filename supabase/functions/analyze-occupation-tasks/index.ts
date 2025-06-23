@@ -70,18 +70,33 @@ serve(async (req) => {
     const onetData = await onetResponse.json();
     
     // Handle different possible structures of the O*NET response
-    let taskDescriptions: string[] = [];
+    let tasksToProcess: any[] = [];
     
     if (onetData.tasks) {
       if (Array.isArray(onetData.tasks)) {
         // Direct array of tasks
-        taskDescriptions = onetData.tasks.map((task: any) => task.description || task);
+        tasksToProcess = onetData.tasks;
       } else if (onetData.tasks.task) {
         // Tasks nested under 'task' property
-        const tasks = Array.isArray(onetData.tasks.task) ? onetData.tasks.task : [onetData.tasks.task];
-        taskDescriptions = tasks.map((task: any) => task.description || task);
+        tasksToProcess = Array.isArray(onetData.tasks.task) ? onetData.tasks.task : [onetData.tasks.task];
+      } else if (onetData.tasks.items) {
+        // Tasks nested under 'items' property
+        tasksToProcess = Array.isArray(onetData.tasks.items) ? onetData.tasks.items : [onetData.tasks.items];
+      } else if (typeof onetData.tasks === 'object') {
+        // Single task object
+        tasksToProcess = [onetData.tasks];
       }
     }
+
+    // Extract task descriptions from the processed tasks array
+    const taskDescriptions: string[] = tasksToProcess.map((task: any) => {
+      if (typeof task === 'string') {
+        return task;
+      } else if (task && typeof task === 'object') {
+        return task.description || task.title || task.name || String(task);
+      }
+      return String(task);
+    }).filter(desc => desc && desc.trim().length > 0);
 
     if (taskDescriptions.length === 0) {
       throw new Error('No tasks found for this occupation');
