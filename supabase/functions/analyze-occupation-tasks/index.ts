@@ -68,7 +68,20 @@ serve(async (req) => {
     }
 
     const onetData = await onetResponse.json();
-    const taskDescriptions = onetData.tasks?.map((task: any) => task.description) || [];
+    
+    // Handle different possible structures of the O*NET response
+    let taskDescriptions: string[] = [];
+    
+    if (onetData.tasks) {
+      if (Array.isArray(onetData.tasks)) {
+        // Direct array of tasks
+        taskDescriptions = onetData.tasks.map((task: any) => task.description || task);
+      } else if (onetData.tasks.task) {
+        // Tasks nested under 'task' property
+        const tasks = Array.isArray(onetData.tasks.task) ? onetData.tasks.task : [onetData.tasks.task];
+        taskDescriptions = tasks.map((task: any) => task.description || task);
+      }
+    }
 
     if (taskDescriptions.length === 0) {
       throw new Error('No tasks found for this occupation');
