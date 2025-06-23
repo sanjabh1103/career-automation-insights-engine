@@ -15,7 +15,7 @@ import { OnboardingTour } from "./OnboardingTour";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
-import { Robot } from 'lucide-react';
+import { Notebook as Robot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export interface SelectedOccupation {

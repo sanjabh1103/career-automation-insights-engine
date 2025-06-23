@@ -7,16 +7,7 @@ import { NotificationSystem } from './NotificationSystem';
 import { APICreditsDisplay } from './APICreditsDisplay';
 import { RateLimitDisplay } from './RateLimitDisplay';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Settings, 
-  Zap, 
-  TrendingUp, 
-  Shield,
-  Brain,
-  Sparkles,
-  Robot
-} from 'lucide-react';
+import { User, Settings, Zap, TrendingUp, Shield, Brain, Sparkles, Notebook as Robot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface EnhancedAPODashboardHeaderProps {
