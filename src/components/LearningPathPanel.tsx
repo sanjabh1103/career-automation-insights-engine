@@ -4,124 +4,79 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Route, 
-  Plus, 
-  Clock, 
   BookOpen, 
   Target, 
-  CheckCircle,
+  Clock, 
+  TrendingUp, 
+  CheckCircle2, 
+  Circle,
+  Loader2,
+  Sparkles,
   Calendar,
-  Edit,
-  Trash2
+  Award
 } from 'lucide-react';
 import { useCareerPlanningStorage, LearningPath, Milestone } from '@/hooks/useCareerPlanningStorage';
-import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function LearningPathPanel() {
   const { 
+    userSkills, 
     learningPaths, 
     saveLearningPaths, 
-    userSkills, 
-    courseRecommendations 
+    userProfile 
   } = useCareerPlanningStorage();
   
-  const [isCreatingPath, setIsCreatingPath] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPath, setSelectedPath] = useState<LearningPath | null>(null);
-  const [newPath, setNewPath] = useState({
-    name: '',
-    description: '',
-    skills: [] as string[],
-    estimatedDuration: '',
-    milestones: [] as Milestone[]
-  });
 
-  // Mock learning paths if none exist
   useEffect(() => {
-    if (learningPaths.length === 0 && userSkills.length > 0) {
-      const mockPaths: LearningPath[] = [
-        {
-          id: '1',
-          name: 'Full-Stack Developer Journey',
-          description: 'Complete path to become a full-stack web developer',
-          skills: ['React', 'Node.js', 'Database Design', 'API Development'],
-          estimatedDuration: '6 months',
-          courses: courseRecommendations.slice(0, 3),
-          milestones: [
-            {
-              id: '1',
-              title: 'Frontend Foundation',
-              description: 'Master HTML, CSS, and JavaScript basics',
-              targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              completed: false,
-              skills: ['HTML', 'CSS', 'JavaScript']
-            },
-            {
-              id: '2',
-              title: 'React Mastery',
-              description: 'Build complex applications with React',
-              targetDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-              completed: false,
-              skills: ['React', 'State Management']
-            }
-          ]
-        },
-        {
-          id: '2',
-          name: 'Leadership Excellence',
-          description: 'Develop strong leadership and management skills',
-          skills: ['Leadership', 'Communication', 'Team Management'],
-          estimatedDuration: '4 months',
-          courses: courseRecommendations.slice(1, 3),
-          milestones: [
-            {
-              id: '3',
-              title: 'Communication Skills',
-              description: 'Improve verbal and written communication',
-              targetDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-              completed: false,
-              skills: ['Communication']
-            }
-          ]
-        }
-      ];
-      saveLearningPaths(mockPaths);
+    if (learningPaths.length > 0) {
+      setSelectedPath(learningPaths[0]);
     }
-  }, [userSkills, courseRecommendations]);
+  }, [learningPaths]);
 
-  const handleCreatePath = () => {
-    if (!newPath.name.trim()) {
-      toast.error('Please enter a path name');
+  const handleGenerateLearningPath = async () => {
+    if (userSkills.length === 0) {
+      toast.error('Please add some skills first to generate a learning path');
       return;
     }
 
-    const path: LearningPath = {
-      id: Date.now().toString(),
-      name: newPath.name.trim(),
-      description: newPath.description.trim(),
-      skills: newPath.skills,
-      estimatedDuration: newPath.estimatedDuration,
-      courses: [],
-      milestones: newPath.milestones
-    };
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-learning-path', {
+        body: {
+          userSkills,
+          targetRole: userProfile?.targetRole || 'Target Role',
+          currentRole: userProfile?.currentRole || 'Current Role',
+          timeCommitment: userProfile?.preferences?.timeCommitment || '5',
+          learningStyle: userProfile?.preferences?.learningStyle || 'mixed',
+          budget: userProfile?.preferences?.budget || 'moderate'
+        }
+      });
 
-    const updatedPaths = [...learningPaths, path];
-    saveLearningPaths(updatedPaths);
-    
-    setNewPath({
-      name: '',
-      description: '',
-      skills: [],
-      estimatedDuration: '',
-      milestones: []
-    });
-    setIsCreatingPath(false);
-    toast.success('Learning path created successfully!');
+      if (error) {
+        console.error('Learning path generation error:', error);
+        toast.error('Failed to generate learning path. Please try again.');
+        return;
+      }
+
+      if (data?.learningPath) {
+        const newPaths = [data.learningPath, ...learningPaths];
+        saveLearningPaths(newPaths);
+        setSelectedPath(data.learningPath);
+        toast.success('AI-powered learning path generated successfully!');
+      }
+
+    } catch (error) {
+      console.error('Learning path generation error:', error);
+      toast.error('Failed to generate learning path. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const toggleMilestone = (pathId: string, milestoneId: string) => {
@@ -129,31 +84,67 @@ export function LearningPathPanel() {
       if (path.id === pathId) {
         return {
           ...path,
-          milestones: path.milestones.map(milestone =>
-            milestone.id === milestoneId
-              ? { ...milestone, completed: !milestone.completed }
-              : milestone
-          )
+          milestones: path.milestones.map(milestone => {
+            if (milestone.id === milestoneId) {
+              return { ...milestone, completed: !milestone.completed };
+            }
+            return milestone;
+          })
         };
       }
       return path;
     });
     
     saveLearningPaths(updatedPaths);
-    toast.success('Milestone updated!');
+    
+    if (selectedPath && selectedPath.id === pathId) {
+      const updatedSelectedPath = updatedPaths.find(p => p.id === pathId);
+      if (updatedSelectedPath) {
+        setSelectedPath(updatedSelectedPath);
+      }
+    }
   };
 
-  const getPathProgress = (path: LearningPath) => {
+  const getProgress = (path: LearningPath) => {
     if (path.milestones.length === 0) return 0;
-    const completedMilestones = path.milestones.filter(m => m.completed).length;
-    return Math.round((completedMilestones / path.milestones.length) * 100);
+    const completed = path.milestones.filter(m => m.completed).length;
+    return (completed / path.milestones.length) * 100;
   };
 
-  const deletePath = (pathId: string) => {
-    const updatedPaths = learningPaths.filter(path => path.id !== pathId);
-    saveLearningPaths(updatedPaths);
-    toast.success('Learning path deleted');
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return 'bg-green-100 text-green-800';
+      case 'intermediate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'advanced':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
+
+  const isOverdue = (targetDate: string) => {
+    return new Date(targetDate) < new Date();
+  };
+
+  if (userSkills.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <div className="space-y-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+            <BookOpen className="w-8 h-8 text-gray-400" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-gray-900">No Skills Added Yet</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              Add some skills in the Skills Management section to generate personalized learning paths
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -161,295 +152,242 @@ export function LearningPathPanel() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-gray-900">Learning Paths</h2>
-          <p className="text-gray-600">Structured pathways to achieve your career goals</p>
+          <p className="text-gray-600">AI-generated personalized learning journeys to achieve your career goals</p>
         </div>
         
-        <Dialog open={isCreatingPath} onOpenChange={setIsCreatingPath}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Path
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Learning Path</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="pathName">Path Name</Label>
-                <Input
-                  id="pathName"
-                  value={newPath.name}
-                  onChange={(e) => setNewPath({ ...newPath, name: e.target.value })}
-                  placeholder="e.g., Full-Stack Developer Journey"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="pathDescription">Description</Label>
-                <Textarea
-                  id="pathDescription"
-                  value={newPath.description}
-                  onChange={(e) => setNewPath({ ...newPath, description: e.target.value })}
-                  placeholder="Describe what this learning path will achieve"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="estimatedDuration">Estimated Duration</Label>
-                <Input
-                  id="estimatedDuration"
-                  value={newPath.estimatedDuration}
-                  onChange={(e) => setNewPath({ ...newPath, estimatedDuration: e.target.value })}
-                  placeholder="e.g., 6 months, 12 weeks"
-                />
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <Button onClick={handleCreatePath} className="flex-1">
-                  Create Path
-                </Button>
-                <Button variant="outline" onClick={() => setIsCreatingPath(false)} className="flex-1">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={handleGenerateLearningPath}
+          disabled={isGenerating}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white flex items-center gap-2"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4" />
+          )}
+          {isGenerating ? 'Generating Path...' : 'Generate AI Learning Path'}
+        </Button>
       </div>
 
-      {/* Learning Paths */}
       {learningPaths.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="space-y-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-              <Route className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+              <Target className="w-8 h-8 text-purple-600" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">No Learning Paths Yet</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Ready to Create Your Learning Path?</h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                Create structured learning paths to organize your skill development journey
+                Click "Generate AI Learning Path" to create a personalized learning journey based on your skills and career goals
               </p>
             </div>
-            <Button 
-              onClick={() => setIsCreatingPath(true)}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your First Path
-            </Button>
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {learningPaths.map((path, index) => (
-            <motion.div
-              key={path.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-200 group">
-                <CardHeader className="pb-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Learning Paths List */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Your Learning Paths</h3>
+            <div className="space-y-3">
+              {learningPaths.map((path, index) => (
+                <motion.div
+                  key={path.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Card 
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedPath?.id === path.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => setSelectedPath(path)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <h4 className="font-semibold text-gray-900 line-clamp-2">{path.name}</h4>
+                          <Badge className={getDifficultyColor(path.difficulty)}>
+                            {path.difficulty}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-sm text-gray-600 line-clamp-2">{path.description}</p>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Progress</span>
+                            <span className="font-medium">{Math.round(getProgress(path))}%</span>
+                          </div>
+                          <Progress value={getProgress(path)} className="h-2" />
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{path.estimatedDuration}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            <span>{path.milestones.length} milestones</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Selected Path Details */}
+          {selectedPath && (
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {path.name}
-                      </CardTitle>
-                      <p className="text-gray-600 text-sm">{path.description}</p>
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl">{selectedPath.name}</CardTitle>
+                      <p className="text-gray-600">{selectedPath.description}</p>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedPath(path)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deletePath(path.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Badge className={getDifficultyColor(selectedPath.difficulty)}>
+                      {selectedPath.difficulty}
+                    </Badge>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
-                  {/* Path Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>{path.estimatedDuration}</span>
+                  {/* Path Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900">{selectedPath.estimatedDuration}</p>
+                      <p className="text-xs text-gray-600">Duration</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{path.courses.length} courses</span>
+                    
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <Target className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900">{selectedPath.milestones.length}</p>
+                      <p className="text-xs text-gray-600">Milestones</p>
+                    </div>
+                    
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900">{Math.round(getProgress(selectedPath))}%</p>
+                      <p className="text-xs text-gray-600">Complete</p>
                     </div>
                   </div>
-                  
-                  {/* Skills */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Skills Covered:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {path.skills.map((skill, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
+
+                  {/* Skills Covered */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900">Skills Covered</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPath.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  
-                  {/* Progress */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Progress</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        {getPathProgress(path)}%
-                      </span>
-                    </div>
-                    <Progress value={getPathProgress(path)} className="h-2" />
-                  </div>
-                  
-                  {/* Milestones */}
-                  {path.milestones.length > 0 && (
+
+                  {/* Prerequisites */}
+                  {selectedPath.prerequisites && selectedPath.prerequisites.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-gray-700">Milestones:</p>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {path.milestones.map((milestone) => (
-                          <div 
-                            key={milestone.id}
-                            className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                      <h4 className="font-semibold text-gray-900">Prerequisites</h4>
+                      <ul className="space-y-1">
+                        {selectedPath.prerequisites.map((prereq, index) => (
+                          <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
+                            {prereq}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Milestones */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-blue-600" />
+                    Learning Milestones
+                  </CardTitle>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="space-y-4">
+                    {selectedPath.milestones.map((milestone, index) => (
+                      <motion.div
+                        key={milestone.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className={`p-4 border rounded-lg transition-all duration-200 ${
+                          milestone.completed 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-white border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleMilestone(selectedPath.id, milestone.id)}
+                            className="p-0 h-auto hover:bg-transparent"
                           >
-                            <button
-                              onClick={() => toggleMilestone(path.id, milestone.id)}
-                              className="mt-0.5"
-                            >
-                              <CheckCircle 
-                                className={`w-4 h-4 ${
-                                  milestone.completed 
-                                    ? 'text-green-600 fill-current' 
-                                    : 'text-gray-400'
-                                }`} 
-                              />
-                            </button>
-                            <div className="flex-1 space-y-1">
-                              <p className={`text-sm font-medium ${
-                                milestone.completed 
-                                  ? 'text-green-900 line-through' 
-                                  : 'text-gray-900'
+                            {milestone.completed ? (
+                              <CheckCircle2 className="w-6 h-6 text-green-600" />
+                            ) : (
+                              <Circle className="w-6 h-6 text-gray-400" />
+                            )}
+                          </Button>
+                          
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h5 className={`font-medium ${
+                                milestone.completed ? 'text-green-900' : 'text-gray-900'
                               }`}>
                                 {milestone.title}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Calendar className="w-3 h-3" />
-                                <span>
-                                  Due: {new Date(milestone.targetDate).toLocaleDateString()}
+                              </h5>
+                              
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Calendar className="w-4 h-4" />
+                                <span className={isOverdue(milestone.targetDate) && !milestone.completed ? 'text-red-600' : ''}>
+                                  {new Date(milestone.targetDate).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors"
-                    onClick={() => setSelectedPath(path)}
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Path Details Dialog */}
-      {selectedPath && (
-        <Dialog open={!!selectedPath} onOpenChange={() => setSelectedPath(null)}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedPath.name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <p className="text-gray-600">{selectedPath.description}</p>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Duration</p>
-                  <p className="text-lg font-semibold">{selectedPath.estimatedDuration}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Progress</p>
-                  <p className="text-lg font-semibold">{getPathProgress(selectedPath)}%</p>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700">Skills You'll Develop:</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPath.skills.map((skill, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              {selectedPath.milestones.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-gray-700">Milestones:</p>
-                  <div className="space-y-3">
-                    {selectedPath.milestones.map((milestone) => (
-                      <div key={milestone.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <button
-                            onClick={() => toggleMilestone(selectedPath.id, milestone.id)}
-                          >
-                            <CheckCircle 
-                              className={`w-5 h-5 mt-0.5 ${
-                                milestone.completed 
-                                  ? 'text-green-600 fill-current' 
-                                  : 'text-gray-400'
-                              }`} 
-                            />
-                          </button>
-                          <div className="flex-1 space-y-2">
-                            <h4 className={`font-medium ${
-                              milestone.completed 
-                                ? 'text-green-900 line-through' 
-                                : 'text-gray-900'
+                            
+                            <p className={`text-sm ${
+                              milestone.completed ? 'text-green-700' : 'text-gray-600'
                             }`}>
-                              {milestone.title}
-                            </h4>
-                            <p className="text-gray-600 text-sm">{milestone.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <Calendar className="w-4 h-4" />
-                              <span>
-                                Target: {new Date(milestone.targetDate).toLocaleDateString()}
-                              </span>
-                            </div>
+                              {milestone.description}
+                            </p>
+                            
+                            {milestone.skills && milestone.skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {milestone.skills.map((skill, skillIndex) => (
+                                  <Badge 
+                                    key={skillIndex} 
+                                    variant="outline" 
+                                    className="text-xs"
+                                  >
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
-              )}
+                </CardContent>
+              </Card>
             </div>
-          </DialogContent>
-        </Dialog>
+          )}
+        </div>
       )}
     </div>
   );

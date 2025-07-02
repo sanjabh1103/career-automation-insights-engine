@@ -5,79 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, ExternalLink, Star, Clock, DollarSign, Search, Filter } from 'lucide-react';
+import { BookOpen, ExternalLink, Star, Clock, DollarSign, Search, Filter, Loader2, RefreshCw } from 'lucide-react';
 import { useCareerPlanningStorage, CourseRecommendation } from '@/hooks/useCareerPlanningStorage';
 import { motion } from 'framer-motion';
-
-// Mock course data - in a real app, this would come from an API
-const MOCK_COURSES: CourseRecommendation[] = [
-  {
-    id: '1',
-    title: 'Complete React Developer Course',
-    provider: 'Udemy',
-    url: 'https://example.com',
-    duration: '40 hours',
-    level: 'Intermediate',
-    rating: 4.8,
-    price: '$59.99',
-    skills: ['React', 'JavaScript', 'Web Development']
-  },
-  {
-    id: '2',
-    title: 'Leadership Fundamentals',
-    provider: 'Coursera',
-    url: 'https://example.com',
-    duration: '20 hours',
-    level: 'Beginner',
-    rating: 4.6,
-    price: 'Free',
-    skills: ['Leadership', 'Management', 'Communication']
-  },
-  {
-    id: '3',
-    title: 'Data Analysis with Python',
-    provider: 'edX',
-    url: 'https://example.com',
-    duration: '60 hours',
-    level: 'Advanced',
-    rating: 4.9,
-    price: '$199.00',
-    skills: ['Python', 'Data Analysis', 'Statistics']
-  },
-  {
-    id: '4',
-    title: 'Project Management Professional',
-    provider: 'LinkedIn Learning',
-    url: 'https://example.com',
-    duration: '30 hours',
-    level: 'Intermediate',
-    rating: 4.7,
-    price: '$29.99/month',
-    skills: ['Project Management', 'Planning', 'Leadership']
-  },
-  {
-    id: '5',
-    title: 'UX Design Bootcamp',
-    provider: 'Udacity',
-    url: 'https://example.com',
-    duration: '120 hours',
-    level: 'Beginner',
-    rating: 4.5,
-    price: '$399.00',
-    skills: ['UX Design', 'Design Thinking', 'Prototyping']
-  },
-  {
-    id: '6',
-    title: 'Digital Marketing Masterclass',
-    provider: 'Skillshare',
-    url: 'https://example.com',
-    duration: '25 hours',
-    level: 'Intermediate',
-    rating: 4.4,
-    price: '$99.00',
-    skills: ['Digital Marketing', 'SEO', 'Social Media']
-  }
-];
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function CourseRecommendationsPanel() {
   const { userSkills, courseRecommendations, saveCourseRecommendations } = useCareerPlanningStorage();
@@ -85,22 +17,25 @@ export function CourseRecommendationsPanel() {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedProvider, setSelectedProvider] = useState('all');
   const [filteredCourses, setFilteredCourses] = useState<CourseRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastSearchSkills, setLastSearchSkills] = useState<string[]>([]);
 
   useEffect(() => {
-    // Initialize with mock courses if none exist
-    if (courseRecommendations.length === 0) {
-      saveCourseRecommendations(MOCK_COURSES);
+    // Auto-search when user skills change
+    if (userSkills.length > 0 && !arraysEqual(userSkills.map(s => s.name), lastSearchSkills)) {
+      handleSearchCourses();
     }
-  }, []);
+  }, [userSkills]);
 
   useEffect(() => {
-    let courses = courseRecommendations.length > 0 ? courseRecommendations : MOCK_COURSES;
+    let courses = courseRecommendations;
     
     // Filter by search term
     if (searchTerm) {
       courses = courses.filter(course =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+        course.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        course.provider.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -116,6 +51,45 @@ export function CourseRecommendationsPanel() {
     
     setFilteredCourses(courses);
   }, [courseRecommendations, searchTerm, selectedLevel, selectedProvider]);
+
+  const handleSearchCourses = async () => {
+    if (userSkills.length === 0) {
+      toast.error('Please add some skills first to get course recommendations');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const skillNames = userSkills.map(skill => skill.name);
+      setLastSearchSkills(skillNames);
+
+      const { data, error } = await supabase.functions.invoke('course-search', {
+        body: { 
+          skills: skillNames.slice(0, 5), // Limit to 5 skills to avoid API limits
+          level: selectedLevel !== 'all' ? selectedLevel : undefined
+        }
+      });
+
+      if (error) {
+        console.error('Course search error:', error);
+        toast.error('Failed to search for courses. Please try again.');
+        return;
+      }
+
+      if (data?.courses && data.courses.length > 0) {
+        saveCourseRecommendations(data.courses);
+        toast.success(`Found ${data.courses.length} course recommendations!`);
+      } else {
+        toast.info('No courses found. Try adjusting your search criteria.');
+      }
+
+    } catch (error) {
+      console.error('Course search error:', error);
+      toast.error('Failed to search for courses. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getRecommendedCourses = () => {
     if (userSkills.length === 0) return filteredCourses;
@@ -140,7 +114,7 @@ export function CourseRecommendationsPanel() {
   };
 
   const recommendedCourses = getRecommendedCourses();
-  const providers = [...new Set(MOCK_COURSES.map(course => course.provider))];
+  const providers = [...new Set(courseRecommendations.map(course => course.provider))];
 
   const getRatingStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -170,12 +144,31 @@ export function CourseRecommendationsPanel() {
     }
   };
 
+  const arraysEqual = (a: string[], b: string[]) => {
+    return a.length === b.length && a.every((val, i) => val === b[i]);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Course Recommendations</h2>
-        <p className="text-gray-600">Discover courses tailored to your skill development goals</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">Course Recommendations</h2>
+          <p className="text-gray-600">Discover courses tailored to your skill development goals</p>
+        </div>
+        
+        <Button 
+          onClick={handleSearchCourses}
+          disabled={isLoading || userSkills.length === 0}
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+        >
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          {isLoading ? 'Searching...' : 'Search Courses'}
+        </Button>
       </div>
 
       {/* Filters */}
@@ -188,7 +181,7 @@ export function CourseRecommendationsPanel() {
                 Search Courses
               </label>
               <Input
-                placeholder="Search by title or skill..."
+                placeholder="Search by title, skill, or provider..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-white"
@@ -231,22 +224,40 @@ export function CourseRecommendationsPanel() {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="p-12 text-center">
+          <div className="space-y-4">
+            <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto" />
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">Searching for Courses...</h3>
+              <p className="text-gray-600">Finding the best learning resources for your skills</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Course Grid */}
-      {recommendedCourses.length === 0 ? (
+      {!isLoading && recommendedCourses.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="space-y-4">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
               <BookOpen className="w-8 h-8 text-gray-400" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">No Courses Found</h3>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {courseRecommendations.length === 0 ? 'No Courses Found Yet' : 'No Matching Courses'}
+              </h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                Try adjusting your search criteria or filters to find relevant courses
+                {courseRecommendations.length === 0 
+                  ? 'Add some skills and click "Search Courses" to get personalized recommendations'
+                  : 'Try adjusting your search criteria or filters to find relevant courses'
+                }
               </p>
             </div>
           </div>
         </Card>
-      ) : (
+      ) : !isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recommendedCourses.map((course, index) => (
             <motion.div
@@ -277,7 +288,7 @@ export function CourseRecommendationsPanel() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-1">
                         {getRatingStars(course.rating)}
-                        <span className="ml-1 font-medium">{course.rating}</span>
+                        <span className="ml-1 font-medium">{course.rating.toFixed(1)}</span>
                       </div>
                       <div className="flex items-center gap-1 text-gray-600">
                         <Clock className="w-4 h-4" />
@@ -289,6 +300,10 @@ export function CourseRecommendationsPanel() {
                       <DollarSign className="w-4 h-4" />
                       <span className="font-medium">{course.price}</span>
                     </div>
+                    
+                    {course.description && (
+                      <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
+                    )}
                     
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-gray-700">Skills you'll learn:</p>
@@ -317,7 +332,8 @@ export function CourseRecommendationsPanel() {
         </div>
       )}
 
-      {userSkills.length > 0 && (
+      {/* Personalized Recommendations Info */}
+      {userSkills.length > 0 && courseRecommendations.length > 0 && (
         <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -327,10 +343,26 @@ export function CourseRecommendationsPanel() {
               <div className="space-y-2">
                 <h3 className="font-semibold text-green-900">Personalized Recommendations</h3>
                 <p className="text-green-700 text-sm">
-                  Courses are sorted based on your current skill profile. The most relevant courses appear first.
-                  Add more skills in the Skills Management section to get better recommendations.
+                  These courses are curated based on your skill profile and career goals. 
+                  We searched across top platforms like Coursera, edX, Udemy, and more to find the best matches.
+                  Click "Search Courses" to refresh recommendations based on your updated skills.
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Feedback Request */}
+      {courseRecommendations.length > 0 && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="text-center space-y-2">
+              <h3 className="font-semibold text-blue-900">How are these recommendations?</h3>
+              <p className="text-blue-700 text-sm">
+                Please let us know if these course recommendations meet your needs or if you prefer other formats. 
+                Your feedback helps us improve our suggestions!
+              </p>
             </div>
           </CardContent>
         </Card>
