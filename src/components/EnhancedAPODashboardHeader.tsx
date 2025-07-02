@@ -27,6 +27,8 @@ import { AIImpactPlannerButton } from './AIImpactPlannerButton';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSession } from '@/hooks/useSession';
+import { searchRateLimiter, apoRateLimiter, exportRateLimiter, checkRateLimit } from '@/utils/rateLimiting';
 
 interface EnhancedAPODashboardHeaderProps {
   userEmail?: string | null;
@@ -38,6 +40,12 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useSession();
+
+  // Get rate limiting status for the current user
+  const searchStatus = user ? checkRateLimit(searchRateLimiter, user.id) : { remaining: 0, resetTime: Date.now(), timeUntilReset: 0 };
+  const apoStatus = user ? checkRateLimit(apoRateLimiter, user.id) : { remaining: 0, resetTime: Date.now(), timeUntilReset: 0 };
+  const exportStatus = user ? checkRateLimit(exportRateLimiter, user.id) : { remaining: 0, resetTime: Date.now(), timeUntilReset: 0 };
 
   const navigationItems = [
     {
@@ -117,7 +125,14 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
                 
                 <div className="space-y-3">
                   <APICreditsDisplay />
-                  <RateLimitDisplay />
+                  <RateLimitDisplay
+                    remaining={searchStatus.remaining}
+                    total={20}
+                    resetTime={searchStatus.resetTime}
+                    timeUntilReset={searchStatus.timeUntilReset}
+                    label="Search Requests"
+                    variant="search"
+                  />
                 </div>
                 
                 <Separator />
@@ -177,7 +192,14 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
               
               <div className="flex items-center gap-3">
                 <APICreditsDisplay />
-                <RateLimitDisplay />
+                <RateLimitDisplay
+                  remaining={searchStatus.remaining}
+                  total={20}
+                  resetTime={searchStatus.resetTime}
+                  timeUntilReset={searchStatus.timeUntilReset}
+                  label="Search Requests"
+                  variant="search"
+                />
               </div>
               
               {userEmail && <LogoutButton />}
@@ -222,7 +244,14 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
             
             <div className="space-y-4">
               <APICreditsDisplay />
-              <RateLimitDisplay />
+              <RateLimitDisplay
+                remaining={apoStatus.remaining}
+                total={5}
+                resetTime={apoStatus.resetTime}
+                timeUntilReset={apoStatus.timeUntilReset}
+                label="APO Analyses"
+                variant="analysis"
+              />
             </div>
             
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
