@@ -12,10 +12,12 @@ export interface UserSkill {
 
 export interface SkillGap {
   id: string;
+  skillId: string;
   skillName: string;
   currentLevel: number;
   targetLevel: number;
   gap: number;
+  gapSize: number;
   priority: 'high' | 'medium' | 'low';
   recommendations: string[];
 }
@@ -58,10 +60,14 @@ export interface ProgressTracking {
   id: string;
   skillId: string;
   skillName: string;
+  initialLevel: number;
+  currentLevel: number;
+  targetLevel: number;
   progressPercentage: number;
   lastUpdated: string;
   milestones: string[];
   timeSpent: number;
+  coursesCompleted: string[];
 }
 
 export interface UserProfile {
@@ -201,13 +207,90 @@ export function useCareerPlanningStorage() {
         id: `progress_${Date.now()}`,
         skillId,
         skillName: skill.name,
+        initialLevel: skill.currentLevel,
+        currentLevel: skill.currentLevel,
+        targetLevel: skill.targetLevel,
         progressPercentage,
         lastUpdated: new Date().toISOString(),
         milestones: [],
         timeSpent: 0,
+        coursesCompleted: [],
       };
       saveProgressTracking([...progressTracking, newProgress]);
     }
+  };
+
+  const updateSkillProgress = (skillId: string, newLevel: number, hoursSpent: number) => {
+    const skill = userSkills.find(s => s.id === skillId);
+    if (!skill) return;
+
+    // Update skill current level
+    updateUserSkill(skillId, { currentLevel: newLevel });
+
+    // Update progress tracking
+    const existingProgress = progressTracking.find(p => p.skillId === skillId);
+    const progressPercentage = Math.min(100, (newLevel / skill.targetLevel) * 100);
+    
+    if (existingProgress) {
+      const updatedProgress = progressTracking.map(p =>
+        p.skillId === skillId
+          ? { 
+              ...p, 
+              currentLevel: newLevel,
+              progressPercentage,
+              timeSpent: p.timeSpent + hoursSpent,
+              lastUpdated: new Date().toISOString() 
+            }
+          : p
+      );
+      saveProgressTracking(updatedProgress);
+    } else {
+      const newProgress: ProgressTracking = {
+        id: `progress_${Date.now()}`,
+        skillId,
+        skillName: skill.name,
+        initialLevel: skill.currentLevel,
+        currentLevel: newLevel,
+        targetLevel: skill.targetLevel,
+        progressPercentage,
+        lastUpdated: new Date().toISOString(),
+        milestones: [],
+        timeSpent: hoursSpent,
+        coursesCompleted: [],
+      };
+      saveProgressTracking([...progressTracking, newProgress]);
+    }
+  };
+
+  const analyzeSkillGaps = (skills: UserSkill[]): SkillGap[] => {
+    return skills
+      .filter(skill => skill.currentLevel < skill.targetLevel)
+      .map(skill => {
+        const gap = skill.targetLevel - skill.currentLevel;
+        const gapSize = gap;
+        let priority: 'high' | 'medium' | 'low' = 'low';
+        
+        if (gap >= 3) priority = 'high';
+        else if (gap >= 2) priority = 'medium';
+
+        const recommendations = [
+          `Focus on practical exercises to improve ${skill.name}`,
+          `Consider taking online courses in ${skill.name}`,
+          `Practice ${skill.name} through real-world projects`,
+        ];
+
+        return {
+          id: `gap_${skill.id}`,
+          skillId: skill.id,
+          skillName: skill.name,
+          currentLevel: skill.currentLevel,
+          targetLevel: skill.targetLevel,
+          gap,
+          gapSize,
+          priority,
+          recommendations,
+        };
+      });
   };
 
   return {
@@ -234,5 +317,7 @@ export function useCareerPlanningStorage() {
     removeUserSkill,
     addLearningPath,
     updateProgressTracking,
+    updateSkillProgress,
+    analyzeSkillGaps,
   };
 }
