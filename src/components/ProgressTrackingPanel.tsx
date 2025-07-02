@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,7 @@ export function ProgressTrackingPanel() {
 
     if (skillsWithoutProgress.length > 0) {
       const newProgressEntries: ProgressTracking[] = skillsWithoutProgress.map(skill => ({
+        id: `progress_${skill.id}_${Date.now()}`,
         skillId: skill.id,
         skillName: skill.name,
         initialLevel: skill.currentLevel,
@@ -49,14 +49,15 @@ export function ProgressTrackingPanel() {
         targetLevel: skill.targetLevel,
         progressPercentage: 0,
         lastUpdated: new Date().toISOString(),
+        milestones: [],
+        timeSpent: 0,
         coursesCompleted: [],
-        timeSpent: 0
       }));
 
       const updatedProgress = [...progressTracking, ...newProgressEntries];
       saveProgressTracking(updatedProgress);
     }
-  }, [userSkills, progressTracking]);
+  }, [userSkills, progressTracking, saveProgressTracking]);
 
   const handleLogProgress = () => {
     if (!selectedSkill) {
@@ -231,7 +232,7 @@ export function ProgressTrackingPanel() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {progressTracking.map((progress, index) => (
             <motion.div
-              key={progress.skillId}
+              key={progress.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
