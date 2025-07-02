@@ -111,7 +111,9 @@ export function LearningPathPanel() {
     return (completed / path.milestones.length) * 100;
   };
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = (difficulty: string | undefined) => {
+    if (!difficulty) return 'bg-gray-100 text-gray-800';
+    
     switch (difficulty.toLowerCase()) {
       case 'beginner':
         return 'bg-green-100 text-green-800';
@@ -207,7 +209,7 @@ export function LearningPathPanel() {
                         <div className="flex items-start justify-between">
                           <h4 className="font-semibold text-gray-900 line-clamp-2">{path.name}</h4>
                           <Badge className={getDifficultyColor(path.difficulty)}>
-                            {path.difficulty}
+                            {path.difficulty || 'Unknown'}
                           </Badge>
                         </div>
                         
@@ -250,7 +252,7 @@ export function LearningPathPanel() {
                       <p className="text-gray-600">{selectedPath.description}</p>
                     </div>
                     <Badge className={getDifficultyColor(selectedPath.difficulty)}>
-                      {selectedPath.difficulty}
+                      {selectedPath.difficulty || 'Unknown'}
                     </Badge>
                   </div>
                 </CardHeader>
