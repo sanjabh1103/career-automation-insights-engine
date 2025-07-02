@@ -1,253 +1,248 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Brain, 
+  User, 
+  Settings, 
+  HelpCircle, 
+  Zap, 
+  Star, 
+  Shield,
+  BarChart3,
+  Users,
+  Award,
+  Menu,
+  X
+} from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
-import { NotificationSystem } from './NotificationSystem';
-import { APICreditsDisplay } from './APICreditsDisplay';
 import { RateLimitDisplay } from './RateLimitDisplay';
-import { motion } from 'framer-motion';
-import { User, Settings, Zap, TrendingUp, Shield, Brain, Sparkles, Notebook as Robot } from 'lucide-react';
+import { APICreditsDisplay } from './APICreditsDisplay';
+import { CareerPlanningButton } from './CareerPlanningButton';
+import { AIImpactPlannerButton } from './AIImpactPlannerButton';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EnhancedAPODashboardHeaderProps {
-  userEmail?: string;
+  userEmail?: string | null;
   onCreditsClick?: () => void;
 }
 
-export function EnhancedAPODashboardHeader({ userEmail }: EnhancedAPODashboardHeaderProps) {
+export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: EnhancedAPODashboardHeaderProps) {
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-  // Placeholder values for rate limiting
-  const rateLimitDemoProps = {
-    remaining: 20,
-    total: 20,
-    resetTime: Date.now() + 60000,
-    timeUntilReset: 60000,
-    label: "API Usage"
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
-      }
+  const navigationItems = [
+    {
+      label: 'User Dashboard',
+      icon: User,
+      onClick: () => navigate('/dashboard'),
+      description: 'Manage your profile and data'
+    },
+    {
+      label: 'AI Impact Planner',
+      icon: Brain,
+      onClick: () => navigate('/ai-impact'),
+      description: 'Explore AI career impact'
     }
+  ];
+
+  const handleCreditsClick = () => {
+    setShowCreditsModal(true);
+    onCreditsClick?.();
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 }
-    }
-  };
-
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <Card className="border-0 rounded-none bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white shadow-2xl">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
-            {/* Logo and Title Section */}
-            <motion.div 
-              className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4"
-              variants={itemVariants}
-            >
-              <div className="flex items-center space-x-3">
-                <motion.div 
-                  className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg"
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300 }}
+  const MobileMenu = () => (
+    <AnimatePresence>
+      {isMobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="absolute right-0 top-0 h-full w-80 bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="h-8 w-8 p-0"
                 >
-                  <Brain className="w-7 h-7 text-white" />
-                </motion.div>
-                <div className="min-w-0">
-                  <motion.h1 
-                    className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-transparent leading-tight"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.6 }}
-                  >
-                    Automation Potential Opportunity (APO)
-                  </motion.h1>
-                  <motion.h2 
-                    className="text-lg sm:text-xl font-semibold text-blue-200 leading-tight"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
-                  >
-                    Dashboard For Professionals
-                  </motion.h2>
-                  <motion.p 
-                    className="text-xs sm:text-sm text-blue-300 mt-1"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6, duration: 0.6 }}
-                  >
-                    AI-Powered Career Automation Analysis
-                  </motion.p>
-                </div>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
               
-              {/* Status Badges */}
-              <motion.div 
-                className="flex items-center space-x-2 flex-wrap"
-                variants={itemVariants}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Secure
-                  </Badge>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    AI-Powered
-                  </Badge>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-
-            {/* User Controls Section */}
-            <motion.div 
-              className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-3"
-              variants={itemVariants}
-            >
-              {/* API Credits and Rate Limits */}
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <motion.div 
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-2 flex-1 sm:flex-none"
-                  whileHover={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <APICreditsDisplay />
-                </motion.div>
-                <motion.div 
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-2 flex-1 sm:flex-none"
-                  whileHover={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <RateLimitDisplay {...rateLimitDemoProps} />
-                </motion.div>
-              </div>
-
-              {/* User Actions */}
-              <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
-                {/* AI Impact Career Planner Button */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/ai-impact')}
-                    className="text-white hover:bg-white/20 border border-white/20 text-xs sm:text-sm px-2 sm:px-3"
-                  >
-                    <Robot className="w-4 h-4 mr-1 sm:mr-2" />
-                    <span>AI Impact Planner</span>
-                  </Button>
-                </motion.div>
-
-                {/* Notifications */}
-                <motion.div 
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-1"
-                  whileHover={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <NotificationSystem />
-                </motion.div>
-
-                {/* User Menu */}
-                {userEmail && (
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
+              <div className="space-y-4">
+                <CareerPlanningButton />
+                
+                <div className="space-y-2">
+                  {navigationItems.map((item) => (
                     <Button
+                      key={item.label}
                       variant="ghost"
-                      size="sm"
-                      onClick={() => navigate('/dashboard')}
-                      className="text-white hover:bg-white/20 border border-white/20 text-xs sm:text-sm px-2 sm:px-3"
+                      onClick={() => {
+                        item.onClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full justify-start text-left p-4 h-auto"
                     >
-                      <User className="w-4 h-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">{userEmail.split('@')[0]}</span>
-                      <span className="sm:hidden">Profile</span>
+                      <item.icon className="w-5 h-5 mr-3" />
+                      <div>
+                        <div className="font-medium">{item.label}</div>
+                        <div className="text-xs text-gray-500">{item.description}</div>
+                      </div>
                     </Button>
-                  </motion.div>
-                )}
-
-                {/* Settings Button */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/dashboard')}
-                    className="text-white hover:bg-white/20 border border-white/20 p-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-
-                {/* Logout */}
-                <LogoutButton />
+                  ))}
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-3">
+                  <APICreditsDisplay />
+                  <RateLimitDisplay />
+                </div>
+                
+                <Separator />
+                
+                {userEmail && <LogoutButton />}
               </div>
-            </motion.div>
-          </div>
-
-          {/* Quick Stats Bar */}
-          <motion.div 
-            className="mt-6 pt-4 border-t border-white/20"
-            variants={itemVariants}
-          >
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {[
-                { value: "1000+", label: "Occupations", color: "blue" },
-                { value: "AI-Powered", label: "Analysis", color: "green" },
-                { value: "Real-time", label: "Data", color: "purple" },
-                { value: "Export", label: "Ready", color: "yellow" }
-              ].map((stat, index) => (
-                <motion.div 
-                  key={stat.label}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className={`text-lg sm:text-2xl font-bold text-${stat.color}-200`}>
-                    {stat.value}
-                  </div>
-                  <div className={`text-xs text-${stat.color}-300`}>
-                    {stat.label}
-                  </div>
-                </motion.div>
-              ))}
             </div>
           </motion.div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  return (
+    <>
+      <motion.header 
+        className="sticky top-0 z-40 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-sm shadow-sm"
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo/Brand */}
+            <motion.div 
+              className="flex items-center gap-3"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  APO Dashboard
+                </h1>
+                <p className="text-xs text-gray-500">Automation Potential Oracle</p>
+              </div>
+            </motion.div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <CareerPlanningButton />
+              </motion.div>
+              
+              <AIImpactPlannerButton />
+              
+              <Button
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+                className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+              
+              <div className="flex items-center gap-3">
+                <APICreditsDisplay />
+                <RateLimitDisplay />
+              </div>
+              
+              {userEmail && <LogoutButton />}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="h-10 w-10 p-0"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <MobileMenu />
+
+      {/* Credits Modal */}
+      <Dialog open={showCreditsModal} onOpenChange={setShowCreditsModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              API Credits & Usage
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full">
+                <Star className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Current Plan: Free Tier</span>
+              </div>
+              <p className="text-gray-600 text-sm">
+                You're using the free tier with limited API calls per day
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <APICreditsDisplay />
+              <RateLimitDisplay />
+            </div>
+            
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-blue-900">Usage Tips</h4>
+                    <ul className="text-xs text-blue-700 space-y-1">
+                      <li>• Credits reset daily at midnight UTC</li>
+                      <li>• Each occupation analysis uses 1 credit</li>
+                      <li>• Save your analyses to avoid re-processing</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
