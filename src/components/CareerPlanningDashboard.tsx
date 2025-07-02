@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +19,8 @@ import {
   User,
   AlertTriangle,
   BookOpen as BookOpenIcon,
-  BarChart3
+  BarChart3,
+  Loader2
 } from 'lucide-react';
 import { useCareerPlanningStorage } from '@/hooks/useCareerPlanningStorage';
 import { SkillsManagementPanel } from './SkillsManagementPanel';
@@ -28,6 +30,7 @@ import { LearningPathPanel } from './LearningPathPanel';
 import { ProgressTrackingPanel } from './ProgressTrackingPanel';
 import { UserProfilePanel } from './UserProfilePanel';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StatsCardProps {
   title: string;

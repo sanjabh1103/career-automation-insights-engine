@@ -4,17 +4,18 @@ import { useState, useEffect } from 'react';
 export interface UserSkill {
   id: string;
   name: string;
-  currentLevel: number; // 1-5
-  targetLevel: number; // 1-5
+  currentLevel: number;
+  targetLevel: number;
   category: string;
+  description?: string;
 }
 
 export interface SkillGap {
-  skillId: string;
+  id: string;
   skillName: string;
   currentLevel: number;
   targetLevel: number;
-  gapSize: number;
+  gap: number;
   priority: 'high' | 'medium' | 'low';
   recommendations: string[];
 }
@@ -29,16 +30,8 @@ export interface CourseRecommendation {
   rating: number;
   price: string;
   skills: string[];
-}
-
-export interface LearningPath {
-  id: string;
-  name: string;
-  description: string;
-  skills: string[];
-  estimatedDuration: string;
-  courses: CourseRecommendation[];
-  milestones: Milestone[];
+  description?: string;
+  prerequisites?: string[];
 }
 
 export interface Milestone {
@@ -50,16 +43,39 @@ export interface Milestone {
   skills: string[];
 }
 
+export interface LearningPath {
+  id: string;
+  name: string;
+  description: string;
+  skills: string[];
+  estimatedDuration: string;
+  milestones: Milestone[];
+  difficulty: string;
+  prerequisites: string[];
+}
+
 export interface ProgressTracking {
+  id: string;
   skillId: string;
   skillName: string;
-  initialLevel: number;
-  currentLevel: number;
-  targetLevel: number;
   progressPercentage: number;
   lastUpdated: string;
-  coursesCompleted: string[];
-  timeSpent: number; // hours
+  milestones: string[];
+  timeSpent: number;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  currentRole?: string;
+  targetRole?: string;
+  experience?: string;
+  preferences?: {
+    learningStyle?: string;
+    timeCommitment?: string;
+    budget?: string;
+  };
 }
 
 const STORAGE_KEYS = {
@@ -68,21 +84,8 @@ const STORAGE_KEYS = {
   COURSE_RECOMMENDATIONS: 'career_planning_course_recommendations',
   LEARNING_PATHS: 'career_planning_learning_paths',
   PROGRESS_TRACKING: 'career_planning_progress_tracking',
-  USER_PROFILE: 'career_planning_user_profile'
+  USER_PROFILE: 'career_planning_user_profile',
 };
-
-export interface UserProfile {
-  currentRole: string;
-  targetRole: string;
-  experience: string;
-  industry: string;
-  goals: string[];
-  preferences: {
-    learningStyle: string;
-    timeCommitment: string;
-    budget: string;
-  };
-}
 
 export function useCareerPlanningStorage() {
   const [userSkills, setUserSkills] = useState<UserSkill[]>([]);
@@ -95,26 +98,29 @@ export function useCareerPlanningStorage() {
 
   // Load data from localStorage on mount
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      const skills = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_SKILLS) || '[]');
-      const gaps = JSON.parse(localStorage.getItem(STORAGE_KEYS.SKILL_GAPS) || '[]');
-      const courses = JSON.parse(localStorage.getItem(STORAGE_KEYS.COURSE_RECOMMENDATIONS) || '[]');
-      const paths = JSON.parse(localStorage.getItem(STORAGE_KEYS.LEARNING_PATHS) || '[]');
-      const progress = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROGRESS_TRACKING) || '[]');
-      const profile = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_PROFILE) || 'null');
+    const loadStoredData = () => {
+      try {
+        const storedUserSkills = localStorage.getItem(STORAGE_KEYS.USER_SKILLS);
+        const storedSkillGaps = localStorage.getItem(STORAGE_KEYS.SKILL_GAPS);
+        const storedCourseRecommendations = localStorage.getItem(STORAGE_KEYS.COURSE_RECOMMENDATIONS);
+        const storedLearningPaths = localStorage.getItem(STORAGE_KEYS.LEARNING_PATHS);
+        const storedProgressTracking = localStorage.getItem(STORAGE_KEYS.PROGRESS_TRACKING);
+        const storedUserProfile = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
 
-      setUserSkills(skills);
-      setSkillGaps(gaps);
-      setCourseRecommendations(courses);
-      setLearningPaths(paths);
-      setProgressTracking(progress);
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error loading career planning data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+        if (storedUserSkills) setUserSkills(JSON.parse(storedUserSkills));
+        if (storedSkillGaps) setSkillGaps(JSON.parse(storedSkillGaps));
+        if (storedCourseRecommendations) setCourseRecommendations(JSON.parse(storedCourseRecommendations));
+        if (storedLearningPaths) setLearningPaths(JSON.parse(storedLearningPaths));
+        if (storedProgressTracking) setProgressTracking(JSON.parse(storedProgressTracking));
+        if (storedUserProfile) setUserProfile(JSON.parse(storedUserProfile));
+      } catch (error) {
+        console.error('Error loading career planning data from localStorage:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStoredData();
   }, []);
 
   // Save functions
@@ -148,64 +154,60 @@ export function useCareerPlanningStorage() {
     localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
   };
 
-  // Utility functions
-  const analyzeSkillGaps = (skills: UserSkill[]): SkillGap[] => {
-    return skills
-      .filter(skill => skill.targetLevel > skill.currentLevel)
-      .map(skill => {
-        const gapSize = skill.targetLevel - skill.currentLevel;
-        const priority = gapSize >= 3 ? 'high' : gapSize >= 2 ? 'medium' : 'low';
-        
-        return {
-          skillId: skill.id,
-          skillName: skill.name,
-          currentLevel: skill.currentLevel,
-          targetLevel: skill.targetLevel,
-          gapSize,
-          priority,
-          recommendations: generateRecommendations(skill.name, gapSize)
-        };
-      });
+  // Helper functions
+  const addUserSkill = (skill: Omit<UserSkill, 'id'>) => {
+    const newSkill: UserSkill = {
+      ...skill,
+      id: `skill_${Date.now()}`,
+    };
+    saveUserSkills([...userSkills, newSkill]);
   };
 
-  const generateRecommendations = (skillName: string, gapSize: number): string[] => {
-    const baseRecommendations = [
-      `Take an online course in ${skillName}`,
-      `Practice ${skillName} through hands-on projects`,
-      `Find a mentor who excels in ${skillName}`,
-      `Join communities focused on ${skillName}`
-    ];
+  const updateUserSkill = (skillId: string, updates: Partial<UserSkill>) => {
+    const updatedSkills = userSkills.map(skill =>
+      skill.id === skillId ? { ...skill, ...updates } : skill
+    );
+    saveUserSkills(updatedSkills);
+  };
 
-    if (gapSize >= 3) {
-      baseRecommendations.push(
-        `Consider formal certification in ${skillName}`,
-        `Attend workshops or bootcamps for ${skillName}`
+  const removeUserSkill = (skillId: string) => {
+    const filteredSkills = userSkills.filter(skill => skill.id !== skillId);
+    saveUserSkills(filteredSkills);
+  };
+
+  const addLearningPath = (path: Omit<LearningPath, 'id'>) => {
+    const newPath: LearningPath = {
+      ...path,
+      id: `path_${Date.now()}`,
+    };
+    saveLearningPaths([...learningPaths, newPath]);
+  };
+
+  const updateProgressTracking = (skillId: string, progressPercentage: number) => {
+    const skill = userSkills.find(s => s.id === skillId);
+    if (!skill) return;
+
+    const existingProgress = progressTracking.find(p => p.skillId === skillId);
+    
+    if (existingProgress) {
+      const updatedProgress = progressTracking.map(p =>
+        p.skillId === skillId
+          ? { ...p, progressPercentage, lastUpdated: new Date().toISOString() }
+          : p
       );
+      saveProgressTracking(updatedProgress);
+    } else {
+      const newProgress: ProgressTracking = {
+        id: `progress_${Date.now()}`,
+        skillId,
+        skillName: skill.name,
+        progressPercentage,
+        lastUpdated: new Date().toISOString(),
+        milestones: [],
+        timeSpent: 0,
+      };
+      saveProgressTracking([...progressTracking, newProgress]);
     }
-
-    return baseRecommendations;
-  };
-
-  const updateSkillProgress = (skillId: string, newLevel: number, hoursSpent: number = 0) => {
-    const updatedProgress = progressTracking.map(progress => {
-      if (progress.skillId === skillId) {
-        const newProgressPercentage = Math.min(
-          100,
-          ((newLevel - progress.initialLevel) / (progress.targetLevel - progress.initialLevel)) * 100
-        );
-        
-        return {
-          ...progress,
-          currentLevel: newLevel,
-          progressPercentage: newProgressPercentage,
-          lastUpdated: new Date().toISOString(),
-          timeSpent: progress.timeSpent + hoursSpent
-        };
-      }
-      return progress;
-    });
-
-    saveProgressTracking(updatedProgress);
   };
 
   return {
@@ -226,8 +228,11 @@ export function useCareerPlanningStorage() {
     saveProgressTracking,
     saveUserProfile,
     
-    // Utility functions
-    analyzeSkillGaps,
-    updateSkillProgress
+    // Helper functions
+    addUserSkill,
+    updateUserSkill,
+    removeUserSkill,
+    addLearningPath,
+    updateProgressTracking,
   };
 }
