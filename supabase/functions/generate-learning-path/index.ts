@@ -41,8 +41,6 @@ interface LearningPath {
   prerequisites: string[];
 }
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -50,12 +48,25 @@ serve(async (req) => {
 
   try {
     const { userSkills, targetRole, currentRole, timeCommitment, learningStyle, budget }: LearningPathRequest = await req.json();
+    
+    console.log('Received request:', { userSkills, targetRole, currentRole, timeCommitment, learningStyle, budget });
 
+    // Check if we have the required API key
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+      console.error('OpenAI API key not found');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        learningPath: null
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const skillGaps = userSkills.filter(skill => skill.targetLevel > skill.currentLevel);
+    
+    console.log('Skill gaps identified:', skillGaps);
     
     const prompt = `
 As an AI career development expert, create a personalized learning path for the following scenario:
@@ -98,6 +109,8 @@ Format your response as a JSON object with this structure:
 Make the path practical, achievable, and tailored to their specific needs. Consider industry standards and typical career progression patterns.
 `;
 
+    console.log('Sending request to OpenAI...');
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -119,11 +132,16 @@ Make the path practical, achievable, and tailored to their specific needs. Consi
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received');
+    
     const generatedContent = data.choices[0].message.content;
+    console.log('Generated content:', generatedContent);
 
     // Parse the JSON response
     let learningPath: LearningPath;
@@ -150,10 +168,13 @@ Make the path practical, achievable, and tailored to their specific needs. Consi
       };
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
+      console.error('Raw response:', generatedContent);
       
       // Fallback learning path
       learningPath = createFallbackLearningPath(skillGaps, targetRole, timeCommitment);
     }
+
+    console.log('Final learning path:', learningPath);
 
     return new Response(JSON.stringify({
       learningPath,

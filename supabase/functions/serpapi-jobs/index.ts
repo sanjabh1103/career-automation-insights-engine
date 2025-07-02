@@ -1,9 +1,18 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface JobResult {
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  postedDate: string;
+  source: string;
 }
 
 interface JobMarketData {
@@ -17,19 +26,12 @@ interface JobMarketData {
     location: string;
     count: number;
   }>;
-  recentJobs: Array<{
-    title: string;
-    company: string;
-    location: string;
-    salary?: string;
-    postedDate: string;
-    source: string;
-  }>;
+  recentJobs: JobResult[];
   trending: boolean;
+  error?: string;
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -37,112 +39,135 @@ Deno.serve(async (req) => {
   try {
     const { jobTitle } = await req.json();
     
-    if (!jobTitle) {
-      throw new Error('Job title is required');
-    }
+    console.log('Searching for job:', jobTitle);
 
-    const SERPAPI_KEY = Deno.env.get('SERPAPI_KEY');
-    if (!SERPAPI_KEY) {
-      throw new Error('SerpAPI key not configured');
+    // Check if we have SerpAPI key
+    const serpApiKey = Deno.env.get('SERPAPI_API_KEY') || Deno.env.get('SERPAPI_KEY');
+    
+    if (!serpApiKey) {
+      console.error('SerpAPI key not found');
+      return new Response(JSON.stringify({
+        totalJobs: 0,
+        recentJobs: [],
+        topLocations: [],
+        trending: false,
+        error: 'SerpAPI key not configured'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    console.log(`Fetching job market data for: ${jobTitle}`);
 
     // Build SerpAPI URL for Google Jobs
-    const searchParams = new URLSearchParams({
-      engine: 'google_jobs',
-      q: jobTitle,
-      hl: 'en',
-      gl: 'us',
-      api_key: SERPAPI_KEY,
-      num: '20', // Get more results for better analysis
-    });
+    const serpApiUrl = new URL('https://serpapi.com/search.json');
+    serpApiUrl.searchParams.set('engine', 'google_jobs');
+    serpApiUrl.searchParams.set('q', jobTitle);
+    serpApiUrl.searchParams.set('api_key', serpApiKey);
+    serpApiUrl.searchParams.set('hl', 'en');
+    serpApiUrl.searchParams.set('gl', 'us');
+    serpApiUrl.searchParams.set('num', '10');
 
-    const serpApiUrl = `https://serpapi.com/search?${searchParams.toString()}`;
-    
-    const response = await fetch(serpApiUrl);
+    console.log('Making request to SerpAPI:', serpApiUrl.toString().replace(serpApiKey, '[HIDDEN]'));
+
+    const response = await fetch(serpApiUrl.toString());
     
     if (!response.ok) {
-      throw new Error(`SerpAPI request failed: ${response.status}`);
+      console.error('SerpAPI request failed:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      return new Response(JSON.stringify({
+        totalJobs: 0,
+        recentJobs: [],
+        topLocations: [],
+        trending: false,
+        error: `SerpAPI request failed: ${response.status}`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
-    console.log('SerpAPI response received:', data.search_metadata?.status);
+    console.log('SerpAPI response received, jobs found:', data.jobs_results?.length || 0);
 
     if (data.error) {
-      throw new Error(`SerpAPI error: ${data.error}`);
+      console.error('SerpAPI error:', data.error);
+      return new Response(JSON.stringify({
+        totalJobs: 0,
+        recentJobs: [],
+        topLocations: [],
+        trending: false,
+        error: data.error
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const jobs = data.jobs_results || [];
-    console.log(`Found ${jobs.length} jobs`);
+    const totalJobs = jobs.length;
 
     // Process job data
-    const processedData: JobMarketData = {
-      totalJobs: jobs.length,
-      recentJobs: jobs.slice(0, 5).map((job: any) => ({
-        title: job.title || 'Unknown Title',
-        company: job.company_name || 'Unknown Company',
-        location: job.location || 'Unknown Location',
-        salary: job.salary || null,
-        postedDate: job.posted_at || 'Recently',
-        source: job.via || 'Unknown Source',
-      })),
-      topLocations: [],
-      trending: jobs.length > 15, // Consider trending if many jobs available
-    };
+    const recentJobs: JobResult[] = jobs.slice(0, 5).map((job: any) => ({
+      title: job.title || 'Unknown Title',
+      company: job.company_name || 'Unknown Company',
+      location: job.location || 'Unknown Location',
+      salary: job.salary ? `$${job.salary}` : null,
+      postedDate: job.posted_at || 'Recently',
+      source: job.via || 'Job Board'
+    }));
 
-    // Analyze locations
-    const locationCounts: Record<string, number> = {};
+    // Extract locations and count them
+    const locationCounts = new Map<string, number>();
     jobs.forEach((job: any) => {
       if (job.location) {
-        const location = job.location.split(',')[0].trim(); // Get city/state
-        locationCounts[location] = (locationCounts[location] || 0) + 1;
+        const location = job.location.split(',')[0].trim(); // Get city name
+        locationCounts.set(location, (locationCounts.get(location) || 0) + 1);
       }
     });
 
-    processedData.topLocations = Object.entries(locationCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([location, count]) => ({ location, count }));
+    const topLocations = Array.from(locationCounts.entries())
+      .map(([location, count]) => ({ location, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
-    // Analyze salaries if available
-    const salaries: number[] = [];
-    jobs.forEach((job: any) => {
-      if (job.salary) {
-        // Extract numbers from salary string
-        const matches = job.salary.match(/\$?([\d,]+)/g);
-        if (matches) {
-          matches.forEach((match: string) => {
-            const num = parseInt(match.replace(/[$,]/g, ''));
-            if (num > 20000 && num < 500000) { // Reasonable salary range
-              salaries.push(num);
-            }
-          });
-        }
-      }
-    });
+    // Calculate salary information if available
+    const salariesWithNumbers = jobs
+      .map((job: any) => job.salary)
+      .filter((salary: any) => salary && typeof salary === 'number');
 
-    if (salaries.length > 0) {
-      const sortedSalaries = salaries.sort((a, b) => a - b);
-      processedData.averageSalary = Math.round(salaries.reduce((a, b) => a + b, 0) / salaries.length);
-      processedData.salaryRange = {
-        min: sortedSalaries[0],
-        max: sortedSalaries[sortedSalaries.length - 1],
+    let averageSalary: number | undefined;
+    let salaryRange: { min: number; max: number } | undefined;
+
+    if (salariesWithNumbers.length > 0) {
+      averageSalary = Math.round(salariesWithNumbers.reduce((sum: number, salary: number) => sum + salary, 0) / salariesWithNumbers.length);
+      salaryRange = {
+        min: Math.min(...salariesWithNumbers),
+        max: Math.max(...salariesWithNumbers)
       };
     }
 
-    return new Response(JSON.stringify(processedData), {
+    const jobMarketData: JobMarketData = {
+      totalJobs,
+      averageSalary,
+      salaryRange,
+      topLocations,
+      recentJobs,
+      trending: totalJobs > 50 // Consider trending if more than 50 jobs
+    };
+
+    console.log('Processed job market data:', jobMarketData);
+
+    return new Response(JSON.stringify(jobMarketData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('SerpAPI jobs error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
+    console.error('Error in serpapi-jobs function:', error);
+    return new Response(JSON.stringify({
       totalJobs: 0,
       recentJobs: [],
       topLocations: [],
       trending: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
