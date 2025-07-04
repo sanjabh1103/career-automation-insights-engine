@@ -54,12 +54,24 @@ serve(async (req) => {
     // Check if we have the required API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found');
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured',
-        learningPath: null
+      console.error('OpenAI API key not found - generating fallback learning path');
+      
+      // Generate fallback learning path without API call
+      const fallbackPath = createFallbackLearningPath(
+        userSkills.filter(skill => skill.targetLevel > skill.currentLevel), 
+        targetRole, 
+        timeCommitment
+      );
+      
+      return new Response(JSON.stringify({
+        learningPath: fallbackPath,
+        generatedAt: new Date().toISOString(),
+        metadata: {
+          skillGapsAddressed: userSkills.filter(skill => skill.targetLevel > skill.currentLevel).length,
+          estimatedWeeksToComplete: calculateWeeksToComplete(fallbackPath.estimatedDuration, timeCommitment),
+          note: 'Generated using fallback method due to API configuration'
+        }
       }), {
-        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

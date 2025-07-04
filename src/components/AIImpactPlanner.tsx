@@ -116,9 +116,15 @@ export function AIImpactPlanner() {
     if (selectedOccupation) {
       fetchTasks(selectedOccupation.code);
       generateSkillRecommendations(selectedOccupation.title);
-      fetchResources();
     }
   }, [selectedOccupation]);
+
+  // Fetch resources when skill recommendations change
+  useEffect(() => {
+    if (skillRecommendations.length > 0) {
+      fetchResources();
+    }
+  }, [skillRecommendations]);
 
   // Search for occupations
   const searchOccupations = async (query: string) => {
@@ -370,60 +376,76 @@ export function AIImpactPlanner() {
     }
   };
 
-  // Fetch reskilling resources
+  // Fetch reskilling resources based on skill recommendations
   const fetchResources = async () => {
     try {
-      // In a real implementation, this would fetch from the backend
-      // For now, we'll use mock data
+      // Get skill areas from current skill recommendations
+      const skillAreas = skillRecommendations.map(skill => skill.name);
       
-      const mockResources: Resource[] = [
-        {
-          title: 'AI Collaboration Fundamentals',
-          url: 'https://www.coursera.org/learn/ai-collaboration',
-          provider: 'Coursera',
-          skillArea: 'AI Collaboration Skills',
-          costType: 'Freemium'
-        },
-        {
-          title: 'Emotional Intelligence in the Workplace',
-          url: 'https://www.linkedin.com/learning/emotional-intelligence-at-work',
-          provider: 'LinkedIn Learning',
-          skillArea: 'Emotional Intelligence',
-          costType: 'Paid'
-        },
-        {
-          title: 'Complex Problem Solving Masterclass',
-          url: 'https://www.udemy.com/course/complex-problem-solving',
-          provider: 'Udemy',
-          skillArea: 'Complex Problem Solving',
-          costType: 'Paid'
-        },
-        {
-          title: 'Ethical Decision Making in Business',
-          url: 'https://www.edx.org/learn/ethics/ethical-decision-making',
-          provider: 'edX',
-          skillArea: 'Ethical Decision Making',
-          costType: 'Freemium'
-        },
-        {
-          title: 'Free Introduction to AI Ethics',
-          url: 'https://www.futurelearn.com/courses/ai-ethics',
-          provider: 'FutureLearn',
-          skillArea: 'Ethical Decision Making',
-          costType: 'Free'
-        },
-        {
-          title: 'Adaptability in the Workplace',
-          url: 'https://www.coursera.org/learn/adaptability-workplace',
-          provider: 'Coursera',
-          skillArea: 'Adaptability',
-          costType: 'Freemium'
+      if (skillAreas.length === 0) {
+        // If no specific skill recommendations, fetch general resources
+        const { data, error } = await supabase
+          .from('ai_reskilling_resources')
+          .select('*')
+          .limit(6);
+
+        if (error) throw error;
+        
+        const formattedResources: Resource[] = (data || []).map(resource => ({
+          title: resource.title,
+          url: resource.url,
+          provider: resource.provider,
+          skillArea: resource.skill_area,
+          costType: resource.cost_type || 'Unknown'
+        }));
+        
+        setResources(formattedResources);
+        return;
+      }
+      
+      // Fetch resources that match the recommended skills
+      const { data, error } = await supabase
+        .from('ai_reskilling_resources')
+        .select('*')
+        .in('skill_area', skillAreas)
+        .limit(10);
+
+      if (error) throw error;
+      
+      let formattedResources: Resource[] = (data || []).map(resource => ({
+        title: resource.title,
+        url: resource.url,
+        provider: resource.provider,
+        skillArea: resource.skill_area,
+        costType: resource.cost_type || 'Unknown'
+      }));
+      
+      // If we don't have enough specific resources, add some general ones
+      if (formattedResources.length < 4) {
+        const { data: generalData, error: generalError } = await supabase
+          .from('ai_reskilling_resources')
+          .select('*')
+          .not('skill_area', 'in', `(${skillAreas.join(',')})`)
+          .limit(6 - formattedResources.length);
+
+        if (!generalError && generalData) {
+          const generalResources: Resource[] = generalData.map(resource => ({
+            title: resource.title,
+            url: resource.url,
+            provider: resource.provider,
+            skillArea: resource.skill_area,
+            costType: resource.cost_type || 'Unknown'
+          }));
+          formattedResources = [...formattedResources, ...generalResources];
         }
-      ];
+      }
       
-      setResources(mockResources);
+      setResources(formattedResources);
     } catch (error) {
       console.error('Error fetching resources:', error);
+      // Fallback to showing message instead of broken mock resources
+      setResources([]);
+      toast.error('Unable to load learning resources at this time');
     }
   };
 
@@ -1081,6 +1103,29 @@ export function AIImpactPlanner() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    ) : skillRecommendations.length > 0 ? (
+                      <div className="text-center py-8">
+                        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Found</h3>
+                        <p className="text-gray-600 mb-4">
+                          We couldn't find specific learning resources for this occupation yet. 
+                          Try exploring these general learning platforms:
+                        </p>
+                        <div className="space-y-2 text-left max-w-md mx-auto">
+                          <a href="https://www.coursera.org" target="_blank" rel="noopener noreferrer" 
+                             className="block p-3 border rounded hover:bg-gray-50 text-blue-600 hover:underline">
+                            Coursera - Online courses from universities and companies
+                          </a>
+                          <a href="https://www.linkedin.com/learning" target="_blank" rel="noopener noreferrer" 
+                             className="block p-3 border rounded hover:bg-gray-50 text-blue-600 hover:underline">
+                            LinkedIn Learning - Professional skill development
+                          </a>
+                          <a href="https://www.edx.org" target="_blank" rel="noopener noreferrer" 
+                             className="block p-3 border rounded hover:bg-gray-50 text-blue-600 hover:underline">
+                            edX - University-level courses and programs
+                          </a>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
