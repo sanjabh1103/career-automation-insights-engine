@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { 
   Brain, 
@@ -230,6 +230,9 @@ export function EnhancedAPODashboardHeader({ userEmail, onCreditsClick }: Enhanc
               <Zap className="w-5 h-5 text-yellow-500" />
               API Credits & Usage
             </DialogTitle>
+            <DialogDescription>
+              View your current API credits and usage limits for occupation analyses.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
             <div className="text-center space-y-3">

@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const ONET_API_KEY = Deno.env.get('ONET_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,6 +18,10 @@ serve(async (req) => {
   try {
     if (!GEMINI_API_KEY) {
       throw new Error('Gemini API key is not configured');
+    }
+
+    if (!ONET_API_KEY) {
+      throw new Error('ONET API key is not configured');
     }
 
     const { occupation_code, occupation_title } = await req.json();
@@ -55,10 +60,10 @@ serve(async (req) => {
       });
     }
 
-    // Fetch occupation details from O*NET
+    // Fetch occupation details from O*NET using the proper API key
     const onetResponse = await fetch(`https://services.onetcenter.org/ws/online/occupations/${occupation_code}/details`, {
       headers: {
-        'Authorization': `Basic ${btoa('ignite_consulting:4675rxg')}`,
+        'Authorization': `Basic ${btoa(ONET_API_KEY + ':')}`,
         'Accept': 'application/json'
       }
     });
