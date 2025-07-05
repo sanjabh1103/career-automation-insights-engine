@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,12 +18,16 @@ import {
   Info,
   AlertTriangle,
   CheckCircle,
-  Loader2
+  Loader2,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { TaskAssessmentPanel } from './TaskAssessmentPanel';
 import { SkillRecommendationsPanel } from './SkillRecommendationsPanel';
+import { EnhancedSkillAnalysis } from './EnhancedSkillAnalysis';
+import { MarketInsightsPanel } from './MarketInsightsPanel';
 import { motion } from 'framer-motion';
 
 interface Occupation {
@@ -265,7 +270,7 @@ export function AIImpactDashboard() {
       {selectedOccupation && (
         <motion.div variants={itemVariants}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="grid grid-cols-5 mb-4">
               <TabsTrigger value="tasks" className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4" />
                 <span>Tasks Analysis</span>
@@ -276,7 +281,15 @@ export function AIImpactDashboard() {
               </TabsTrigger>
               <TabsTrigger value="skills" className="flex items-center gap-2">
                 <Award className="w-4 h-4" />
-                <span>Skill Recommendations</span>
+                <span>Skills</span>
+              </TabsTrigger>
+              <TabsTrigger value="enhanced" className="flex items-center gap-2">
+                <Brain className="w-4 h-4" />
+                <span>Enhanced Analysis</span>
+              </TabsTrigger>
+              <TabsTrigger value="market" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                <span>Market Insights</span>
               </TabsTrigger>
             </TabsList>
             
@@ -355,6 +368,19 @@ export function AIImpactDashboard() {
               <SkillRecommendationsPanel 
                 occupationTitle={selectedOccupation.title}
                 occupationCode={selectedOccupation.code}
+              />
+            </TabsContent>
+
+            <TabsContent value="enhanced">
+              <EnhancedSkillAnalysis 
+                occupationTitle={selectedOccupation.title}
+                occupationCode={selectedOccupation.code}
+              />
+            </TabsContent>
+
+            <TabsContent value="market">
+              <MarketInsightsPanel 
+                occupationTitle={selectedOccupation.title}
               />
             </TabsContent>
           </Tabs>
