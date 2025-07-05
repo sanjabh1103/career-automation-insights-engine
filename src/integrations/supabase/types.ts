@@ -2741,6 +2741,36 @@ export type Database = {
           },
         ]
       }
+      enhanced_skill_analysis: {
+        Row: {
+          analysis_data: Json
+          created_at: string
+          id: string
+          occupation_code: string
+          occupation_title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          analysis_data?: Json
+          created_at?: string
+          id?: string
+          occupation_code: string
+          occupation_title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          analysis_data?: Json
+          created_at?: string
+          id?: string
+          occupation_code?: string
+          occupation_title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       entanglement_nodes: {
         Row: {
           created_at: string | null
@@ -3981,6 +4011,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           values_priorities?: Json | null
+        }
+        Relationships: []
+      }
+      market_insights_cache: {
+        Row: {
+          created_at: string
+          id: string
+          insights_data: Json
+          location: string
+          occupation_title: string
+          time_horizon: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insights_data: Json
+          location?: string
+          occupation_title: string
+          time_horizon?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insights_data?: Json
+          location?: string
+          occupation_title?: string
+          time_horizon?: number
         }
         Relationships: []
       }
