@@ -3,34 +3,29 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { 
   Target, 
   TrendingUp, 
   BookOpen, 
   Award, 
-  Clock,
-  Users,
-  Star,
-  ArrowRight,
-  Plus,
-  ChevronRight,
   User,
   AlertTriangle,
   BookOpen as BookOpenIcon,
   BarChart3,
-  Loader2
+  Loader2,
+  Brain
 } from 'lucide-react';
-import { useCareerPlanningStorage } from '@/hooks/useCareerPlanningStorage';
+import { useCareerPlanningData } from '@/hooks/useCareerPlanningData';
 import { SkillsManagementPanel } from './SkillsManagementPanel';
 import { SkillGapAnalysisPanel } from './SkillGapAnalysisPanel';
 import { CourseRecommendationsPanel } from './CourseRecommendationsPanel';
 import { LearningPathPanel } from './LearningPathPanel';
 import { ProgressTrackingPanel } from './ProgressTrackingPanel';
 import { UserProfilePanel } from './UserProfilePanel';
+import { EnhancedSkillAnalysisPanel } from './enhanced-skill-analysis/EnhancedSkillAnalysisPanel';
+import { MarketInsightsPanel } from './market-insights/MarketInsightsPanel';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
 
 interface StatsCardProps {
   title: string;
@@ -76,15 +71,13 @@ function StatsCard({ title, value, description, icon: Icon, color, trend }: Stat
 
 export function CareerPlanningDashboard() {
   const {
-    userSkills,
-    skillGaps,
-    progressTracking,
-    learningPaths,
     userProfile,
+    skillProgress,
+    learningPaths,
     isLoading
-  } = useCareerPlanningStorage();
+  } = useCareerPlanningData();
 
-  const [activeTab, setActiveTab] = useState('skills');
+  const [activeTab, setActiveTab] = useState('profile');
 
   if (isLoading) {
     return (
@@ -94,10 +87,10 @@ export function CareerPlanningDashboard() {
     );
   }
 
-  const totalSkills = userSkills.length;
-  const skillsWithGaps = skillGaps.length;
-  const averageProgress = progressTracking.length > 0
-    ? Math.round(progressTracking.reduce((sum, p) => sum + p.progressPercentage, 0) / progressTracking.length)
+  const totalSkills = userProfile?.skills?.length || 0;
+  const skillsWithGaps = userProfile?.skills?.filter(skill => skill.currentLevel < skill.targetLevel).length || 0;
+  const averageProgress = skillProgress.length > 0
+    ? Math.round(skillProgress.reduce((sum, p) => sum + p.progressPercentage, 0) / skillProgress.length)
     : 0;
   const totalLearningPaths = learningPaths.length;
 
@@ -129,7 +122,7 @@ export function CareerPlanningDashboard() {
       animate="visible"
     >
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Enhanced Header with Job Market Integration */}
+        {/* Enhanced Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -149,10 +142,42 @@ export function CareerPlanningDashboard() {
           </div>
         </motion.div>
 
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="Total Skills"
+            value={totalSkills}
+            description="Skills in your profile"
+            icon={Award}
+            color="from-blue-600 to-blue-700"
+          />
+          <StatsCard
+            title="Skill Gaps"
+            value={skillsWithGaps}
+            description="Skills to improve"
+            icon={AlertTriangle}
+            color="from-orange-600 to-orange-700"
+          />
+          <StatsCard
+            title="Avg Progress"
+            value={`${averageProgress}%`}
+            description="Overall learning progress"
+            icon={TrendingUp}
+            color="from-green-600 to-green-700"
+          />
+          <StatsCard
+            title="Learning Paths"
+            value={totalLearningPaths}
+            description="Active learning paths"
+            icon={Target}
+            color="from-purple-600 to-purple-700"
+          />
+        </div>
+
         {/* Navigation Tabs */}
         <div className="flex justify-center">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
-            <div className="flex space-x-1">
+            <div className="flex flex-wrap justify-center gap-1">
               {tabs.map((tab) => (
                 <motion.button
                   key={tab.id}
@@ -160,7 +185,7 @@ export function CareerPlanningDashboard() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200
+                    flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm
                     ${activeTab === tab.id
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
@@ -168,14 +193,14 @@ export function CareerPlanningDashboard() {
                   `}
                 >
                   <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </motion.button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Tab Content with Enhanced Panels */}
+        {/* Tab Content */}
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, x: 20 }}
@@ -183,127 +208,41 @@ export function CareerPlanningDashboard() {
           transition={{ duration: 0.3 }}
           className="bg-white/60 backdrop-blur-sm rounded-3xl shadow-xl p-8"
         >
+          {activeTab === 'profile' && <UserProfilePanel />}
           {activeTab === 'skills' && <SkillsManagementPanel />}
           {activeTab === 'gaps' && <SkillGapAnalysisPanel />}
           {activeTab === 'courses' && <CourseRecommendationsPanel />}
           {activeTab === 'paths' && <LearningPathPanel />}
           {activeTab === 'progress' && <ProgressTrackingPanel />}
-          {activeTab === 'market' && <JobMarketInsightsPanel />}
+          {activeTab === 'analysis' && (
+            <EnhancedSkillAnalysisPanel 
+              occupationTitle={userProfile?.targetRole}
+              userSkills={userProfile?.skills?.map(skill => ({
+                name: skill.name,
+                level: skill.currentLevel,
+                category: skill.category
+              }))}
+            />
+          )}
+          {activeTab === 'market' && (
+            <MarketInsightsPanel 
+              occupationTitle={userProfile?.targetRole}
+            />
+          )}
         </motion.div>
       </div>
     </motion.div>
   );
 }
 
-// Add Job Market Insights Panel component
-function JobMarketInsightsPanel() {
-  const { userSkills } = useCareerPlanningStorage();
-  const [jobData, setJobData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchJobMarketData = async () => {
-    if (userSkills.length === 0) return;
-    
-    setIsLoading(true);
-    try {
-      const topSkill = userSkills[0]?.name;
-      const { data, error } = await supabase.functions.invoke('serpapi-jobs', {
-        body: { jobTitle: topSkill }
-      });
-
-      if (!error && data) {
-        setJobData(data);
-      }
-    } catch (error) {
-      console.error('Job market data fetch error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJobMarketData();
-  }, [userSkills]);
-
-  return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Job Market Insights</h2>
-        <p className="text-gray-600">Real-time job market data for your skills</p>
-      </div>
-
-      {isLoading ? (
-        <Card className="p-12 text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Fetching job market data...</p>
-        </Card>
-      ) : jobData ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-blue-600">{jobData.totalJobs}</h3>
-                <p className="text-gray-600">Available Jobs</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-green-600">
-                  {jobData.trending ? 'High' : 'Moderate'}
-                </h3>
-                <p className="text-gray-600">Demand Level</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-purple-600">
-                  {jobData.topLocations?.[0]?.location || 'Various'}
-                </h3>
-                <p className="text-gray-600">Top Location</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {jobData.recentJobs && jobData.recentJobs.length > 0 && (
-            <Card className="md:col-span-2 lg:col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Job Openings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {jobData.recentJobs.slice(0, 5).map((job: any, index: number) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h4 className="font-semibold text-gray-900">{job.title}</h4>
-                      <p className="text-gray-600">{job.company} • {job.location}</p>
-                      {job.salary && <p className="text-green-600 font-medium">{job.salary}</p>}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <Card className="p-12 text-center">
-          <p className="text-gray-600">Add skills to see job market insights</p>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// Update tabs array to include job market
+// Updated tabs array to include new enhanced features
 const tabs = [
-  { id: 'skills', label: 'Skills Management', icon: User },
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'skills', label: 'Skills', icon: Award },
   { id: 'gaps', label: 'Skill Gaps', icon: AlertTriangle },
-  { id: 'courses', label: 'Course Recommendations', icon: BookOpenIcon },
+  { id: 'courses', label: 'Courses', icon: BookOpenIcon },
   { id: 'paths', label: 'Learning Paths', icon: Target },
-  { id: 'progress', label: 'Progress Tracking', icon: TrendingUp },
-  { id: 'market', label: 'Job Market', icon: BarChart3 },
+  { id: 'progress', label: 'Progress', icon: TrendingUp },
+  { id: 'analysis', label: 'AI Analysis', icon: Brain },
+  { id: 'market', label: 'Market Insights', icon: BarChart3 },
 ];
