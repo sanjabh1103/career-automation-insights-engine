@@ -18,22 +18,19 @@ interface MarketInsightsPanelProps {
 
 interface MarketInsights {
   demandForecast: {
-    currentDemand: string;
-    futureOutlook: string;
-    growthRate: number;
-    employmentProjection: string;
+    trend: string;
+    confidence: number;
+    factors: string[];
   };
   salaryAnalysis: {
-    medianSalary: number;
-    salaryRange: { min: number; max: number };
-    salaryGrowth: number;
-    location: string;
+    currentRange: string;
+    trend: string;
+    projection: string;
   };
   skillsTrends: Array<{
     skill: string;
-    demandLevel: string;
-    importance: number;
-    trend: 'increasing' | 'stable' | 'decreasing';
+    demand: string;
+    growth: string;
   }>;
   geographicHotspots: Array<{
     location: string;
@@ -68,26 +65,6 @@ export function MarketInsightsPanel({ occupationTitle }: MarketInsightsPanelProp
     try {
       console.log('Fetching market insights for:', occupationTitle);
 
-      // Check cache first
-      const { data: cachedInsights } = await supabase
-        .from('market_insights_cache')
-        .select('insights_data')
-        .eq('occupation_title', occupationTitle)
-        .eq('location', location)
-        .eq('time_horizon', timeHorizon)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .single();
-
-      if (cachedInsights) {
-        console.log('Using cached market insights');
-        setInsights(cachedInsights.insights_data);
-        toast({
-          title: 'Market Insights Loaded',
-          description: 'Displaying cached market analysis data',
-        });
-        return;
-      }
-
       // Fetch fresh data
       const { data, error } = await supabase.functions.invoke('market-insights', {
         body: {
@@ -103,17 +80,42 @@ export function MarketInsightsPanel({ occupationTitle }: MarketInsightsPanelProp
       }
 
       console.log('Market insights received:', data);
-      setInsights(data);
+      
+      // Transform the data to match our interface
+      const transformedData: MarketInsights = {
+        demandForecast: {
+          trend: data.demandForecast?.currentDemand === 'high' ? 'increasing' : 
+                 data.demandForecast?.currentDemand === 'low' ? 'decreasing' : 'stable',
+          confidence: 85,
+          factors: [
+            data.demandForecast?.futureOutlook || 'Market outlook unavailable',
+            data.demandForecast?.employmentProjection || 'Employment projection unavailable'
+          ]
+        },
+        salaryAnalysis: {
+          currentRange: data.salaryAnalysis?.medianSalary ? 
+            `$${(data.salaryAnalysis.medianSalary * 0.8).toLocaleString()} - $${(data.salaryAnalysis.medianSalary * 1.2).toLocaleString()}` :
+            'Salary data unavailable',
+          trend: data.salaryAnalysis?.salaryGrowth > 0 ? 'up' : 
+                 data.salaryAnalysis?.salaryGrowth < 0 ? 'down' : 'stable',
+          projection: data.salaryAnalysis?.salaryGrowth ? 
+            `${data.salaryAnalysis.salaryGrowth}% growth expected` : 
+            'No projection available'
+        },
+        skillsTrends: data.skillsTrends?.map((skill: any) => ({
+          skill: skill.skill,
+          demand: skill.demandLevel,
+          growth: `${skill.importance * 10}%`
+        })) || [],
+        geographicHotspots: data.geographicHotspots || [],
+        industryContext: data.industryContext || {
+          keyIndustries: [],
+          emergingRoles: [],
+          disruptionFactors: []
+        }
+      };
 
-      // Cache the results
-      await supabase
-        .from('market_insights_cache')
-        .upsert({
-          occupation_title: occupationTitle,
-          location,
-          time_horizon: timeHorizon,
-          insights_data: data,
-        });
+      setInsights(transformedData);
 
       toast({
         title: 'Market Insights Generated',
@@ -215,7 +217,7 @@ export function MarketInsightsPanel({ occupationTitle }: MarketInsightsPanelProp
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <DemandForecastCard demandForecast={insights.demandForecast} />
           <SalaryAnalysisCard salaryAnalysis={insights.salaryAnalysis} />
-          <TopSkillsCard skillsTrends={insights.skillsTrends} />
+          <TopSkillsCard topSkills={insights.skillsTrends} />
           <GeographicHotspotsCard geographicHotspots={insights.geographicHotspots} />
           
           {/* Industry Context Card */}
