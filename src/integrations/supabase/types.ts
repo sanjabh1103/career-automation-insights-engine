@@ -103,6 +103,75 @@ export type Database = {
           },
         ]
       }
+      ai_reskilling_resources: {
+        Row: {
+          cost_type: string | null
+          created_at: string
+          description: string | null
+          id: string
+          provider: string
+          skill_area: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          cost_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider: string
+          skill_area: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          cost_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          provider?: string
+          skill_area?: string
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      ai_task_assessments: {
+        Row: {
+          category: string
+          confidence: number | null
+          created_at: string
+          explanation: string | null
+          id: string
+          occupation_code: string
+          task_description: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          confidence?: number | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          occupation_code: string
+          task_description: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          occupation_code?: string
+          task_description?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           created_at: string
