@@ -12,8 +12,9 @@ export function APICreditsDisplay() {
     return null;
   }
 
-  const credits = profile.api_credits || 0;
-  const maxCredits = profile.subscription_tier === 'premium' ? 1000 : 100;
+  // Temporarily disabled until profiles table is updated
+  const credits = 0;
+  const maxCredits = 100;
   const percentage = Math.min((credits / maxCredits) * 100, 100);
   
   const getStatusColor = () => {
@@ -42,10 +43,10 @@ export function APICreditsDisplay() {
         <Progress value={percentage} className="h-2" />
       </div>
       <Badge 
-        variant={profile.subscription_tier === 'premium' ? 'default' : 'secondary'}
+        variant="secondary"
         className="text-xs"
       >
-        {profile.subscription_tier || 'free'}
+        free
       </Badge>
     </div>
   );

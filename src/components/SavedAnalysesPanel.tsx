@@ -80,12 +80,12 @@ export function SavedAnalysesPanel({ onLoadAnalysis }: SavedAnalysesPanelProps) 
           <BookOpen className="w-5 h-5 text-green-500" />
           <h3 className="text-lg font-semibold">Saved Analyses</h3>
           <Badge variant="secondary" className="ml-auto">
-            {savedAnalyses.length}
+            {Array.isArray(savedAnalyses) ? savedAnalyses.length : 0}
           </Badge>
         </div>
 
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {savedAnalyses.length === 0 ? (
+          {!Array.isArray(savedAnalyses) || savedAnalyses.length === 0 ? (
             <p className="text-gray-500 text-sm">No saved analyses yet.</p>
           ) : (
             savedAnalyses.map((analysis) => (

@@ -2,8 +2,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // O*NET API uses username and password authentication
-const ONET_USERNAME = 'ignite_consulting';
-const ONET_PASSWORD = '4675rxg';
+const ONET_USERNAME = Deno.env.get('ONET_USERNAME');
+const ONET_PASSWORD = Deno.env.get('ONET_PASSWORD');
+
+if (!ONET_USERNAME || !ONET_PASSWORD) {
+  console.error('ONET_USERNAME and ONET_PASSWORD environment variables are required');
+}
 const ONET_BASE_URL = 'https://services.onetcenter.org/ws/online';
 
 const corsHeaders = {
@@ -18,7 +22,23 @@ serve(async (req) => {
   }
 
   try {
-    const { onetPath } = await req.json(); // e.g., 'search?keyword=developer&end=50'
+    // Verify credentials are available
+    if (!ONET_USERNAME || !ONET_PASSWORD) {
+      return new Response(JSON.stringify({ error: 'O*NET credentials not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { onetPath } = await req.json();
+
+    // Validate input to prevent injection attacks
+    if (!onetPath || typeof onetPath !== 'string' || onetPath.length > 500) {
+      return new Response(JSON.stringify({ error: 'Invalid onetPath parameter' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Create Basic Auth header with username:password
     const authHeader = 'Basic ' + btoa(`${ONET_USERNAME}:${ONET_PASSWORD}`);

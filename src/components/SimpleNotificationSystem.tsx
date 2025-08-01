@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export function NotificationSystem() {
+export function SimpleNotificationSystem() {
   const [showNotifications, setShowNotifications] = useState(false);
   
   // Simple placeholder until notifications table is created

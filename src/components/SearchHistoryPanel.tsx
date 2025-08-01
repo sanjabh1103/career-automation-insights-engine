@@ -42,9 +42,9 @@ export function SearchHistoryPanel({ onSearchSelect }: SearchHistoryPanelProps) 
         <div className="flex items-center gap-2">
           <History className="w-5 h-5 text-purple-500" />
           <h3 className="text-lg font-semibold">Search History</h3>
-          <Badge variant="secondary">{searchHistory.length}</Badge>
+          <Badge variant="secondary">{Array.isArray(searchHistory) ? searchHistory.length : 0}</Badge>
         </div>
-        {searchHistory.length > 0 && (
+        {Array.isArray(searchHistory) && searchHistory.length > 0 && (
           <Button 
             size="sm" 
             variant="outline" 
@@ -58,10 +58,10 @@ export function SearchHistoryPanel({ onSearchSelect }: SearchHistoryPanelProps) 
       </div>
 
       <div className="space-y-2 max-h-64 overflow-y-auto">
-        {searchHistory.length === 0 ? (
+        {!Array.isArray(searchHistory) || searchHistory.length === 0 ? (
           <p className="text-gray-500 text-sm">No search history yet.</p>
         ) : (
-          searchHistory.map((item) => (
+          (Array.isArray(searchHistory) ? searchHistory : []).map((item) => (
             <div 
               key={item.id} 
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
