@@ -2315,37 +2315,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_locked_until: string | null
+          api_credits: number | null
           created_at: string | null
           email: string | null
+          failed_login_attempts: number | null
           full_name: string | null
           id: string
+          last_login: string | null
           location: Json | null
           phone: string | null
           preferences: Json | null
+          subscription_tier: string | null
           updated_at: string | null
           user_id: string
           user_type: string
         }
         Insert: {
+          account_locked_until?: string | null
+          api_credits?: number | null
           created_at?: string | null
           email?: string | null
+          failed_login_attempts?: number | null
           full_name?: string | null
           id?: string
+          last_login?: string | null
           location?: Json | null
           phone?: string | null
           preferences?: Json | null
+          subscription_tier?: string | null
           updated_at?: string | null
           user_id: string
           user_type?: string
         }
         Update: {
+          account_locked_until?: string | null
+          api_credits?: number | null
           created_at?: string | null
           email?: string | null
+          failed_login_attempts?: number | null
           full_name?: string | null
           id?: string
+          last_login?: string | null
           location?: Json | null
           phone?: string | null
           preferences?: Json | null
+          subscription_tier?: string | null
           updated_at?: string | null
           user_id?: string
           user_type?: string
