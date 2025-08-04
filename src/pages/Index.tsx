@@ -5,6 +5,7 @@ import { EnhancedAPODashboardHeader } from '@/components/EnhancedAPODashboardHea
 import { useSession } from '@/hooks/useSession';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { LogoutButton } from '@/components/LogoutButton';
 import { motion } from 'framer-motion';
 
 const Index = () => {
@@ -33,10 +34,13 @@ const Index = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <EnhancedAPODashboardHeader 
-        userEmail={user?.email}
-        onCreditsClick={() => setShowCreditsModal(true)}
-      />
+      <div className="flex items-center justify-between p-4">
+        <EnhancedAPODashboardHeader 
+          userEmail={user?.email}
+          onCreditsClick={() => setShowCreditsModal(true)}
+        />
+        <LogoutButton />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useSession } from '@/hooks/useSession';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { logPermissionDenied } from '@/utils/securityAuditLog';
 
 interface SecureAuthGuardProps {
   children: React.ReactNode;
@@ -25,6 +26,9 @@ export function SecureAuthGuard({
 
     // Check authentication requirement
     if (requireAuth && !user) {
+      // Log the permission denied event
+      logPermissionDenied('access_protected_route', undefined, 'authenticated');
+      
       // Store the attempted URL for redirect after login
       const redirectUrl = location.pathname + location.search;
       navigate(`${redirectTo}?redirect=${encodeURIComponent(redirectUrl)}`, { replace: true });
@@ -35,6 +39,7 @@ export function SecureAuthGuard({
     if (requireRole && user) {
       // This would check user.role or fetch from profiles table
       // For now, we'll skip role-based access
+      logPermissionDenied('access_role_protected_route', user.id, requireRole);
     }
   }, [user, loading, requireAuth, requireRole, redirectTo, navigate, location]);
 

@@ -4,7 +4,7 @@ export interface SecurityEvent {
   event_type: 'auth_attempt' | 'rate_limit_exceeded' | 'suspicious_activity' | 'data_access' | 'permission_denied';
   user_id?: string;
   details: Record<string, any>;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: 'info' | 'warning' | 'error' | 'critical';
   ip_address?: string;
   user_agent?: string;
 }
@@ -66,19 +66,21 @@ class SecurityAuditLogger {
     this.logQueue = [];
 
     try {
-      // In a real implementation, you'd send to your security log table
-      // For now, we'll log to analytics_events
-      for (const event of eventsToFlush) {
-        await supabase.from('analytics_events').insert({
-          event_type: `security_${event.event_type}`,
-          event_data: {
-            ...event.details,
-            severity: event.severity,
-            ip_address: event.ip_address,
-            user_agent: event.user_agent
-          },
-          user_id: event.user_id || null
-        });
+      const { error } = await supabase
+        .from('security_audit_logs')
+        .insert(eventsToFlush.map(event => ({
+          event_type: event.event_type,
+          user_id: event.user_id,
+          details: event.details || {},
+          severity: event.severity,
+          ip_address: event.ip_address,
+          user_agent: event.user_agent,
+          session_id: event.session_id
+        })));
+
+      if (error) {
+        console.error('Error inserting security logs:', error);
+        throw error;
       }
     } catch (error) {
       console.error('Failed to flush security logs:', error);
@@ -111,7 +113,7 @@ export function logAuthAttempt(success: boolean, userId?: string, details?: Reco
     event_type: 'auth_attempt',
     user_id: userId,
     details: { success, ...details },
-    severity: success ? 'low' : 'medium'
+    severity: success ? 'info' : 'warning'
   });
 }
 
@@ -120,7 +122,7 @@ export function logRateLimitExceeded(userId: string, action: string, remaining: 
     event_type: 'rate_limit_exceeded',
     user_id: userId,
     details: { action, remaining },
-    severity: 'medium'
+    severity: 'warning'
   });
 }
 
@@ -129,7 +131,7 @@ export function logSuspiciousActivity(description: string, userId?: string, deta
     event_type: 'suspicious_activity',
     user_id: userId,
     details: { description, ...details },
-    severity: 'high'
+    severity: 'error'
   });
 }
 
@@ -138,7 +140,7 @@ export function logDataAccess(resource: string, userId: string, action: string) 
     event_type: 'data_access',
     user_id: userId,
     details: { resource, action },
-    severity: 'low'
+    severity: 'info'
   });
 }
 
@@ -147,6 +149,6 @@ export function logPermissionDenied(action: string, userId?: string, requiredRol
     event_type: 'permission_denied',
     user_id: userId,
     details: { action, requiredRole },
-    severity: 'medium'
+    severity: 'warning'
   });
 }
