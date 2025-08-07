@@ -91,8 +91,9 @@ class SecurityAuditLogger {
   }
 
   private getClientIP(): string {
-    // This is a placeholder - in production, you'd get this from your backend
-    return 'client_ip_placeholder';
+    // In a client-side context, we can't directly get the real IP
+    // This should be set server-side or through a service
+    return 'unknown';
   }
 
   private getSessionId(): string {

@@ -3913,7 +3913,7 @@ export type Database = {
           details: Json
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: string | null
           session_id: string | null
           severity: string
           user_agent: string | null
@@ -3924,7 +3924,7 @@ export type Database = {
           details?: Json
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: string | null
           session_id?: string | null
           severity: string
           user_agent?: string | null
@@ -3935,7 +3935,7 @@ export type Database = {
           details?: Json
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: string | null
           session_id?: string | null
           severity?: string
           user_agent?: string | null
