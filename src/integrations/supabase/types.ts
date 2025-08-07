@@ -5511,6 +5511,20 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      has_role: {
+        Args: {
+          user_uuid: string
+          required_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      has_role_or_higher: {
+        Args: {
+          user_uuid: string
+          required_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       set_limit: {
         Args: { "": number }
         Returns: number
