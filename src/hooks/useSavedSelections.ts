@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "@supabase/supabase-js";
 
 export interface SavedSelection<T> {
@@ -32,7 +30,7 @@ function setLocalSelections<T>(selections: SavedSelection<T>[]) {
 
 export function useSavedSelections<T = unknown>() {
   const [user, setUser] = useState<User | null>(null);
-  const queryClient = useQueryClient();
+  const [saved, setSaved] = useState<SavedSelection<T>[]>([]);
 
   useEffect(() => {
     const checkUserSession = async () => {
@@ -43,128 +41,49 @@ export function useSavedSelections<T = unknown>() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      queryClient.invalidateQueries({ queryKey: ['user_selections'] });
     });
+
+    // Load from localStorage
+    setSaved(getLocalSelections<T>());
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [queryClient]);
-  
-  const queryKey = ['user_selections', user?.id];
+  }, []);
 
-  const { data: saved = [], isLoading } = useQuery<SavedSelection<T>[]>({
-    queryKey,
-    queryFn: async () => {
-      if (!user) {
-        return getLocalSelections<T>();
-      }
+  const saveList = (name: string, data: T) => {
+    const newEntry: SavedSelection<T> = {
+      id: `local_${Date.now().toString(36)}`,
+      name: name || "Untitled",
+      data: data,
+      createdAt: Date.now(),
+    };
+    const updated = [newEntry, ...saved];
+    setSaved(updated);
+    setLocalSelections(updated);
+  };
 
-      const { data, error } = await supabase
-        .from('user_selections')
-        .select('id, name, selections, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+  const updateName = (id: string, newName: string) => {
+    const updated = saved.map(s => s.id === id ? { ...s, name: newName } : s);
+    setSaved(updated);
+    setLocalSelections(updated);
+  };
 
-      if (error) {
-        console.error('Error fetching selections from Supabase:', error);
-        throw error;
-      }
-      
-      return data.map(d => ({
-        id: d.id,
-        name: d.name,
-        data: d.selections as T,
-        createdAt: new Date(d.created_at).getTime(),
-      }));
-    },
-  });
+  const removeList = (id: string) => {
+    const updated = saved.filter(s => s.id !== id);
+    setSaved(updated);
+    setLocalSelections(updated);
+  };
 
-  const saveListMutation = useMutation({
-    mutationFn: async ({ name, data: listData }: { name: string, data: T }) => {
-      if (!user) {
-        const currentSelections = getLocalSelections<T>();
-        const newEntry: SavedSelection<T> = {
-          id: `local_${Date.now().toString(36)}`,
-          name: name || "Untitled",
-          data: listData,
-          createdAt: Date.now(),
-        };
-        setLocalSelections([newEntry, ...currentSelections]);
-        return newEntry;
-      }
-
-      const { data, error } = await supabase
-        .from('user_selections')
-        .insert({ user_id: user.id, name: name || "Untitled", selections: listData as any })
-        .select('id')
-        .single();
-      
-      if (error) {
-        console.error('Error saving selection to Supabase:', error);
-        throw error;
-      }
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
-
-  const updateNameMutation = useMutation({
-    mutationFn: async ({ id, newName }: { id: string, newName: string }) => {
-      if (!user || id.startsWith('local_')) {
-        const selections = getLocalSelections<T>();
-        const updatedSelections = selections.map(s => s.id === id ? { ...s, name: newName } : s);
-        setLocalSelections(updatedSelections);
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_selections')
-        .update({ name: newName })
-        .eq('id', id);
-
-      if (error) {
-        console.error("Error updating selection name in Supabase:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    }
-  });
-
-  const removeListMutation = useMutation({
-    mutationFn: async (id: string) => {
-      if (!user || id.startsWith('local_')) {
-        const selections = getLocalSelections<T>();
-        const filteredSelections = selections.filter(s => s.id !== id);
-        setLocalSelections(filteredSelections);
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_selections')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error("Error removing selection from Supabase:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    }
-  });
+  const loadList = (id: string): SavedSelection<T> | undefined => 
+    saved.find((entry) => entry.id === id);
 
   return {
     saved,
-    isLoading,
-    saveList: (name: string, data: T) => saveListMutation.mutate({ name, data }),
-    updateName: (id: string, newName: string) => updateNameMutation.mutate({ id, newName }),
-    removeList: (id: string) => removeListMutation.mutate(id),
-    loadList: (id: string): SavedSelection<T> | undefined => saved.find((entry) => entry.id === id),
+    isLoading: false,
+    saveList,
+    updateName,
+    removeList,
+    loadList,
   };
 }

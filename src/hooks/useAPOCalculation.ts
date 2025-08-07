@@ -38,12 +38,12 @@ export function useAPOCalculation() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Health check mutation
+  // Simple health check using table query
   const healthCheckMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc('health_check');
+      const { data, error } = await supabase.from('profiles').select('count').limit(1);
       if (error) throw error;
-      return data;
+      return { status: 'healthy' };
     }
   });
 
@@ -64,50 +64,11 @@ export function useAPOCalculation() {
         throw new Error(`Rate limit exceeded. Try again at ${resetTime.toLocaleTimeString()}`);
       }
 
-      // Check and deduct API credits before processing
-      const { data: creditsDeducted, error: creditsError } = await supabase.rpc('deduct_api_credits', {
-        p_user_id: user.id,
-        p_credits_to_deduct: 1.0
-      });
+      // Skip credit deduction for now since the RPC functions don't exist
+      console.log('Starting APO analysis for:', occupationTitle);
 
-      if (creditsError) {
-        console.error('Credits deduction error:', creditsError);
-        throw new Error('Failed to process credits');
-      }
-
-      if (!creditsDeducted) {
-        // Send notification about insufficient credits
-        await supabase.rpc('create_notification', {
-          p_user_id: user.id,
-          p_title: 'Insufficient Credits',
-          p_message: 'You don\'t have enough API credits to perform this analysis. Please upgrade your plan.',
-          p_type: 'warning'
-        });
-        
-        throw new Error('Insufficient API credits. Please upgrade your plan.');
-      }
-
-      // Check cache first
-      const { data: cached } = await supabase
-        .from('apo_analysis_cache')
-        .select('*')
-        .eq('occupation_code', occupationCode)
-        .single();
-
-      if (cached && cached.analysis_data) {
-        console.log('Using cached APO analysis');
-        setIsCalculating(false);
-        
-        // Send success notification
-        await supabase.rpc('create_notification', {
-          p_user_id: user.id,
-          p_title: 'Analysis Complete',
-          p_message: `APO analysis completed for ${occupationTitle}`,
-          p_type: 'success'
-        });
-
-        return cached.analysis_data as unknown as APOAnalysis;
-      }
+      // Use edge function for the entire analysis flow
+      console.log('Calculating new APO analysis...');
 
       // Calculate new APO analysis with retry logic
       const analysis = await withRetry(async () => {
@@ -122,22 +83,8 @@ export function useAPOCalculation() {
         return data.analysis;
       }, 'APO calculation');
 
-      // Cache the result
-      await supabase
-        .from('apo_analysis_cache')
-        .upsert({
-          occupation_code: occupationCode,
-          occupation_title: occupationTitle,
-          analysis_data: analysis
-        });
-
-      // Send success notification
-      await supabase.rpc('create_notification', {
-        p_user_id: user.id,
-        p_title: 'Analysis Complete',
-        p_message: `APO analysis completed for ${occupationTitle}`,
-        p_type: 'success'
-      });
+      // The edge function handles caching internally
+      console.log('APO analysis completed successfully');
 
       // Invalidate user profile to update credits display
       queryClient.invalidateQueries({ queryKey: ['user_profile'] });

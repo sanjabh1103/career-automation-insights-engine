@@ -6,9 +6,16 @@ export function SecurityHeaders() {
     // Set client-side security headers where possible
     // Note: These should ideally be set at the server level for maximum effectiveness
     
-    // Prevent clickjacking
+    // Prevent clickjacking - use safer approach
     if (window.top !== window.self) {
-      window.top?.location.replace(window.location.href);
+      try {
+        if (window.top) {
+          window.top.location.href = window.location.href;
+        }
+      } catch (e) {
+        // Silently handle security errors for cross-origin frames
+        console.warn('Frame security check failed:', e);
+      }
     }
     
     // Disable right-click context menu for sensitive content (optional)

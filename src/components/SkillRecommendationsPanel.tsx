@@ -57,30 +57,18 @@ export function SkillRecommendationsPanel({ occupationTitle, occupationCode }: S
 
     setIsLoading(true);
     try {
-      // First check if we have cached recommendations
-      const { data: cachedRecommendations, error: cacheError } = await supabase
-        .from('ai_skill_recommendations')
-        .select('*')
-        .eq('occupation_code', occupationCode)
-        .order('priority', { ascending: true });
+      // Fetch skill recommendations using edge function
+      const { data, error } = await supabase.functions.invoke('skill-recommendations', {
+        body: { 
+          occupation_code: occupationCode,
+          occupation_title: occupationTitle
+        },
+      });
 
-      if (!cacheError && cachedRecommendations && cachedRecommendations.length > 0) {
-        setRecommendations(cachedRecommendations);
-        toast.success('Skill recommendations loaded');
-      } else {
-        // If no cached data, fetch from the API
-        const { data, error } = await supabase.functions.invoke('skill-recommendations', {
-          body: { 
-            occupation_code: occupationCode,
-            occupation_title: occupationTitle
-          },
-        });
-
-        if (error) throw error;
-        
-        setRecommendations(data);
-        toast.success('Skill recommendations generated');
-      }
+      if (error) throw error;
+      
+      setRecommendations(data?.recommendations || []);
+      toast.success('Skill recommendations generated');
 
       // Fetch learning resources
       await fetchLearningResources();
