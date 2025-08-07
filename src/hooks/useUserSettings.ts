@@ -46,24 +46,21 @@ export function useUserSettings() {
     queryFn: async () => {
       if (!user) return DEFAULT_SETTINGS;
 
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('settings')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user settings:', error);
-        return DEFAULT_SETTINGS;
+      // Since user_settings table doesn't exist, use localStorage for now
+      const storageKey = `user_settings_${user.id}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return { ...DEFAULT_SETTINGS, ...parsed };
+        } catch (error) {
+          console.error('Error parsing stored settings:', error);
+          return DEFAULT_SETTINGS;
+        }
       }
 
-      // Defensive: force settings to be an object if possible
-      let settingsObj = {};
-      if (data && typeof data.settings === 'object' && data.settings !== null) {
-        settingsObj = data.settings;
-      }
-
-      return { ...DEFAULT_SETTINGS, ...settingsObj };
+      return DEFAULT_SETTINGS;
     },
     enabled: !!user,
   });
@@ -73,18 +70,10 @@ export function useUserSettings() {
       if (!user) throw new Error('User not authenticated');
 
       const updatedSettings = { ...settings, ...newSettings };
-
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          settings: updatedSettings
-        });
-
-      if (error) {
-        console.error('Error updating user settings:', error);
-        throw error;
-      }
+      
+      // Store in localStorage since table doesn't exist
+      const storageKey = `user_settings_${user.id}`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedSettings));
       
       return updatedSettings;
     },

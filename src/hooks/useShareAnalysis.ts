@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +10,12 @@ export interface ShareAnalysisData {
   shared_with_email?: string;
   expires_at?: string;
   max_views?: number;
+}
+
+export interface SharedAnalysisResult {
+  success: boolean;
+  analysis?: any;
+  error?: string;
 }
 
 export function useShareAnalysis() {
@@ -30,9 +37,13 @@ export function useShareAnalysis() {
     }
   });
 
-  const getSharedAnalysis = async (shareToken: string) => {
+  const getSharedAnalysis = async (shareToken: string): Promise<SharedAnalysisResult> => {
     console.log('Mock get shared analysis:', shareToken);
-    return { success: true, analysis: null };
+    return { 
+      success: false, 
+      analysis: null,
+      error: 'Analysis not found or access denied'
+    };
   };
 
   const revokeShare = async (shareId: string) => {

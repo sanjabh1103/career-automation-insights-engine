@@ -7,6 +7,7 @@ export interface SecurityEvent {
   severity: 'info' | 'warning' | 'error' | 'critical';
   ip_address?: string;
   user_agent?: string;
+  session_id?: string;
 }
 
 class SecurityAuditLogger {
@@ -41,7 +42,7 @@ class SecurityAuditLogger {
       timestamp: new Date().toISOString(),
       ip_address: event.ip_address || this.getClientIP(),
       user_agent: event.user_agent || navigator.userAgent,
-      session_id: this.getSessionId()
+      session_id: event.session_id || this.getSessionId()
     };
 
     this.logQueue.push(enrichedEvent);

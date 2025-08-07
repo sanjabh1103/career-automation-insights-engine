@@ -28,7 +28,8 @@ export default function SharedAnalysisPage() {
         if (result?.success && result?.analysis) {
           setAnalysisData(result);
         } else {
-          setError(result?.error || 'Analysis not found or access denied');
+          // Handle mock response that doesn't have error property
+          setError('Analysis not found or access denied');
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load shared analysis');
